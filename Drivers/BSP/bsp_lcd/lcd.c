@@ -1304,104 +1304,27 @@ void lcd_show_string(uint16_t x, uint16_t y, uint16_t width, uint16_t height, ui
 const typFNT_GB16 cn_16x16[] = 
 {
     /* 遇 - UTF-8: 0xE9 0x81 0x87 */
-    {{0xE9, 0x81, 0x87}, {0x00,0x00,0x23,0xF8,0x12,0x48,0x13,0xF8,0x02,0x48,0x03,0xF8,0xF0,0x40,0x17,0xFC,
-                          0x14,0x44,0x14,0x54,0x14,0x74,0x15,0x94,0x14,0x04,0x14,0x0C,0x28,0x00,0x47,0xFE}},
+    {0xE9, 0x81, 0x87, {0x00,0x00,0x23,0xF8,0x12,0x48,0x13,0xF8,0x02,0x48,0x03,0xF8,0xF0,0x40,0x17,0xFC,
+                        0x14,0x44,0x14,0x54,0x14,0x74,0x15,0x94,0x14,0x04,0x14,0x0C,0x28,0x00,0x47,0xFE,}},
 
     /* 见 - UTF-8: 0xE8 0xA7 0x81 */
-    {{0xE8, 0xA7, 0x81}, {0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x11,0x10,0x11,0x10,0x11,0x10,0x11,0x10,
-                          0x11,0x10,0x12,0x90,0x12,0x90,0x04,0x80,0x04,0x80,0x08,0x82,0x30,0x82,0xC0,0x7E}},
+    {0xE8, 0xA7, 0x81, {0x00,0x00,0x1F,0xF0,0x10,0x10,0x10,0x10,0x11,0x10,0x11,0x10,0x11,0x10,0x11,0x10,
+                        0x11,0x10,0x12,0x90,0x12,0x90,0x04,0x80,0x04,0x80,0x08,0x82,0x30,0x82,0xC0,0x7E,}},
 
     /* 司 - UTF-8: 0xE5 0x8F 0xB8 */
-    {{0xE5, 0x8F, 0xB8}, {0x00,0x00,0x3F,0xF8,0x00,0x08,0x00,0x08,0x7F,0xE8,0x00,0x08,0x00,0x08,0x1F,0x88,
-                          0x10,0x88,0x10,0x88,0x10,0x88,0x10,0x88,0x1F,0x88,0x10,0x88,0x00,0x28,0x00,0x10}},
+    {0xE5, 0x8F, 0xB8, {0x00,0x00,0x3F,0xF8,0x00,0x08,0x00,0x08,0x7F,0xE8,0x00,0x08,0x00,0x08,0x1F,0x88,
+                        0x10,0x88,0x10,0x88,0x10,0x88,0x10,0x88,0x1F,0x88,0x10,0x88,0x00,0x28,0x00,0x10}},
 
     /* 空 - UTF-8: 0xE7 0xA9 0xBA */
     {{0xE7, 0xA9, 0xBA}, {0x02,0x00,0x01,0x00,0x7F,0xFE,0x40,0x02,0x88,0x24,0x10,0x10,0x20,0x08,0x00,0x00,
-                          0x1F,0xF0,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x7F,0xFC,0x00,0x00}},
-    
+                        0x1F,0xF0,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x01,0x00,0x7F,0xFC,0x00,0x00,}},
+
     /* 必须保留此行作为结束标记 */
-    {{0, 0, 0}, {0}} 
+    {0, 0, 0, {0}} 
 };
 
 
-/**
- * @brief       显示单个16x16汉字
- * @param       x,y       : 显示坐标
- * @param       font_data : 字模数据指针
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-static void lcd_draw_cn_16(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
-{
-    uint8_t i, j, k;
-    uint8_t temp;
-    
-    // 遍历16行
-    for (i = 0; i < 16; i++)
-    {
-        // 每行2个字节 (16点)
-        for (j = 0; j < 2; j++)
-        {
-            temp = font_data[i * 2 + j]; // 取出数据
-            // 遍历每个字节的8个位
-            for (k = 0; k < 8; k++)
-            {
-                // 判断当前位是1还是0
-                if (temp & 0x80) 
-                {
-                    lcd_draw_point(x + j * 8 + k, y + i, color); // 1: 画字体颜色
-                }
-                else
-                {
-                    // 0: 画背景颜色 (如果不需要背景色，注释掉这一行即可实现透明背景)
-                    lcd_draw_point(x + j * 8 + k, y + i, back_color); 
-                }
-                temp <<= 1; // 移位，准备判断下一位
-            }
-        }
-    }
-}
 
-/**
- * @brief       显示汉字字符串 (目前仅支持16x16字体)
- * @param       x,y       : 起始坐标
- * @param       str       : 汉字字符串，如 "遇见司空"
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color)
-{
-    uint16_t x0 = x;
-    uint8_t i = 0;
-    
-    // 遍历输入字符串
-    while (*str != 0) 
-    {
-        // 查找字库
-        for (i = 0; cn_16x16[i].Index[0] != 0; i++)
-        {
-            // 使用 memcmp 比较3个字节（UTF-8汉字）
-            if (memcmp(cn_16x16[i].Index, str, 3) == 0)
-            {
-                // 找到了，画出来
-                lcd_draw_cn_16(x, y, cn_16x16[i].Msk, color, back_color);
-                
-                // 坐标移动
-                x += 16;
-                if (x > lcddev.width - 16) // 换行处理
-                {
-                    x = x0;
-                    y += 16;
-                }
-                break; // 跳出查找循环，处理下一个汉字
-            }
-        }
-        
-        str += 3; // UTF-8汉字占3字节，指针后移3位
-    }
-}
 
 /**
  * 32x32汉字字模数据表
@@ -1466,6 +1389,46 @@ const typFNT_GB32 cn_32x32[] =
     {0, 0, 0, {0}} 
 };
 
+
+/**
+ * @brief       显示单个16x16汉字
+ * @param       x,y       : 显示坐标
+ * @param       font_data : 字模数据指针
+ * @param       color     : 字体颜色
+ * @param       back_color: 背景颜色
+ * @retval      无
+ */
+static void lcd_draw_cn_16(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
+{
+    uint8_t i, j, k;
+    uint8_t temp;
+    
+    // 遍历16行
+    for (i = 0; i < 16; i++)
+    {
+        // 每行2个字节 (16点)
+        for (j = 0; j < 2; j++)
+        {
+            temp = font_data[i * 2 + j]; // 取出数据
+            // 遍历每个字节的8个位
+            for (k = 0; k < 8; k++)
+            {
+                // 判断当前位是1还是0
+                if (temp & 0x80) 
+                {
+                    lcd_draw_point(x + j * 8 + k, y + i, color); // 1: 画字体颜色
+                }
+                else
+                {
+                    // 0: 画背景颜色 (如果不需要背景色，注释掉这一行即可实现透明背景)
+                    lcd_draw_point(x + j * 8 + k, y + i, back_color); 
+                }
+                temp <<= 1; // 移位，准备判断下一位
+            }
+        }
+    }
+}
+
 /**
  * @brief       显示单个32x32汉字
  * @param       x,y       : 显示坐标
@@ -1506,14 +1469,15 @@ static void lcd_draw_cn_32(uint16_t x, uint16_t y, const uint8_t *font_data, uin
 }
 
 /**
- * @brief       显示32x32汉字字符串
- * @param       x,y       : 起始坐标
- * @param       str       : 汉字字符串，如 "遇见司空"
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
+ * @brief       显示汉字字符串（支持16x16和32x32字体）
+ * @param       x,y         : 起始坐标
+ * @param       str         : 汉字字符串，如 "遇见司空"
+ * @param       color       : 字体颜色
+ * @param       back_color  : 背景颜色
+ * @param       font_size   : 字体大小（FONT_SIZE_16/FONT_SIZE_32）
  * @retval      无
  */
-void lcd_show_chinese_32(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color)
+void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, FONT_SIZE font_size)
 {
     uint16_t x0 = x;
     uint8_t i = 0;
@@ -1521,29 +1485,56 @@ void lcd_show_chinese_32(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, u
     // 遍历输入字符串
     while (*str != 0) 
     {
-        // 查找字库
-        for (i = 0; cn_32x32[i].Index[0] != 0; i++)
+        // 根据字体大小查找字库
+        if (font_size == FONT_SIZE_16)
         {
-            // 使用 memcmp 比较3个字节（UTF-8汉字）
-            if (memcmp(cn_32x32[i].Index, str, 3) == 0)
+            // 查找16x16字库
+            for (i = 0; cn_16x16[i].Index[0] != 0; i++)
             {
-                // 找到了，画出来
-                lcd_draw_cn_32(x, y, cn_32x32[i].Msk, color, back_color);
-                
-                // 坐标移动
-                x += 32;
-                if (x > lcddev.width - 32) // 换行处理
+                // 使用 memcmp 比较3个字节（UTF-8汉字）
+                if (memcmp(cn_16x16[i].Index, str, 3) == 0)
                 {
-                    x = x0;
-                    y += 32;
+                    // 找到了，画出来
+                    lcd_draw_cn_16(x, y, cn_16x16[i].Msk, color, back_color);
+                    
+                    // 坐标移动
+                    x += 16;
+                    if (x > lcddev.width - 16) // 换行处理
+                    {
+                        x = x0;
+                        y += 16;
+                    }
+                    break; // 跳出查找循环，处理下一个汉字
                 }
-                break; // 跳出查找循环，处理下一个汉字
+            }
+        }
+        else if (font_size == FONT_SIZE_32)
+        {
+            // 查找32x32字库
+            for (i = 0; cn_32x32[i].Index[0] != 0; i++)
+            {
+                // 使用 memcmp 比较3个字节（UTF-8汉字）
+                if (memcmp(cn_32x32[i].Index, str, 3) == 0)
+                {
+                    // 找到了，画出来
+                    lcd_draw_cn_32(x, y, cn_32x32[i].Msk, color, back_color);
+                    
+                    // 坐标移动
+                    x += 32;
+                    if (x > lcddev.width - 32) // 换行处理
+                    {
+                        x = x0;
+                        y += 32;
+                    }
+                    break; // 跳出查找循环，处理下一个汉字
+                }
             }
         }
         
         str += 3; // UTF-8汉字占3字节，指针后移3位
     }
 }
+
 
 /**
  * @brief       在LCD上显示图片

@@ -141,17 +141,32 @@ typedef struct
 {
     unsigned char Index[3];  // 汉字UTF-8编码 (3字节）
     unsigned char Msk[32];  // 点阵数据 (16x16字体需要32字节)
-} typFNT_GB16; 
+} typFNT_GB16;
 
+// 32x32汉字字模结构体
 typedef struct 
 {
     unsigned char Index[3];  // 汉字UTF-8编码 (3字节）
-    unsigned char Msk[128];  // 点阵数据 (16x16字体需要32字节)
-} typFNT_GB32; 
+    unsigned char Msk[128]; // 点阵数据 (32x32字体需要128字节)
+} typFNT_GB32;
+
+// 字体大小枚举
+typedef enum 
+{
+    FONT_SIZE_16 = 16,  // 16x16字体
+    FONT_SIZE_24 = 24,  // 24x24字体（预留）
+    FONT_SIZE_32 = 32,  // 32x32字体
+} FONT_SIZE;
+
+// 字体信息结构体
+typedef struct 
+{
+    uint8_t size;           // 字体大小（16/24/32）
+    const void *font_table;  // 字模表指针
+} FONT_INFO;
 
 // 函数声明
-void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t color, uint16_t back_color);
-void lcd_show_chinese_32(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color);
+void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t color, uint16_t back_color, FONT_SIZE font_size);
 void lcd_show_picture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pic);
 
 /* LCD_BASE的详细解算方法:
