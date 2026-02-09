@@ -31,6 +31,7 @@
 
 #include "stdlib.h"
 #include "main.h"
+#include "lcdfont.h"
 
 /* 枚举类型定义 */
 typedef enum
@@ -134,49 +135,6 @@ typedef struct
     volatile uint16_t LCD_RAM;
 } LCD_TypeDef;
 
-/* 在 lcd.h 中添加 这里增加实现 汉字显示功能 */
-
-// 汉字字模结构体
-typedef struct 
-{
-    unsigned char Index[3];  // 汉字UTF-8编码 (3字节）
-    unsigned char Msk[32];  // 点阵数据 (16x16字体需要32字节)
-} typFNT_GB16;
-
-// 24x24 字体结构体 (24*24/8 = 72字节)
-typedef struct {
-    uint8_t Index[3]; // UTF-8 编码 3字节
-    uint8_t Msk[72];  // 字模数据
-} typFNT_GB24;
-
-// 48x48 字体结构体 (48*48/8 = 288字节)
-typedef struct {
-    uint8_t Index[3]; // UTF-8 编码 3字节
-    uint8_t Msk[288]; // 字模数据
-} typFNT_GB48;
-
-// 32x32汉字字模结构体
-typedef struct 
-{
-    unsigned char Index[3];  // 汉字UTF-8编码 (3字节）
-    unsigned char Msk[128]; // 点阵数据 (32x32字体需要128字节)
-} typFNT_GB32;
-
-// 字体大小枚举
-typedef enum 
-{
-    FONT_SIZE_16 = 16,  // 16x16字体
-    FONT_SIZE_24 = 24,  // 24x24字体（预留）
-    FONT_SIZE_32 = 32,  // 32x32字体
-    FONT_SIZE_48 = 48,  // 48x48字体（预留）
-} FONT_SIZE;
-
-// 字体信息结构体
-typedef struct 
-{
-    uint8_t size;           // 字体大小（16/24/32）
-    const void *font_table;  // 字模表指针
-} FONT_INFO;
 
 // 函数声明
 void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t color, uint16_t back_color, FONT_SIZE font_size);
