@@ -1507,7 +1507,6 @@ void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint
     }
 }
 
-
 /**
  * @brief       在LCD上显示图片
  * @param       x,y       : 图片显示的起始坐标
@@ -1548,17 +1547,3 @@ void lcd_show_picture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, c
         LCD->LCD_RAM = pic_data[i];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

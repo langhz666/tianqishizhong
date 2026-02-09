@@ -1,5 +1,5 @@
 version: "4.1"
-name: 02_lcddemo
+name: 03_lcddemo2
 type: ARM
 deviceName: null
 packDir: null
