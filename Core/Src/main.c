@@ -95,19 +95,20 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_FSMC_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   DWT_Delay_Init();
-  lcd_init();
-  lcd_clear(WHITE);     // 清屏为白色
+  // lcd_init();
+  // lcd_clear(WHITE);     // 清屏为白色
     
 
-  lcd_display_dir(1); // <--- 添加这一行：设置为横屏模式
+  // lcd_display_dir(1); // <--- 添加这一行：设置为横屏模式
   
-  lcd_clear(WHITE);
+  // lcd_clear(WHITE);
   
-  // 现在的宽度足够放下 240 了
-  //lcd_show_picture(0, 100, 240, 140, gImage_imag_kkedg);
-  lcd_show_picture(0, 50, 319, 145, gImage_imag_test);
+  // // 现在的宽度足够放下 240 了
+  // //lcd_show_picture(0, 100, 240, 140, gImage_imag_kkedg);
+  // lcd_show_picture(0, 50, 319, 145, gImage_imag_test);
   
 
   
