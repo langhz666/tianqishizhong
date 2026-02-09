@@ -107,8 +107,13 @@ int main(void)
     
   // 显示中文
   // 直接使用UTF-8字符串，无需任何编码转换
-  lcd_show_chinese(10, 80, (uint8_t*)"遇见司空", RED, WHITE, FONT_SIZE_16);
-  
+  lcd_show_chinese(10, 60, (uint8_t*)"遇见司空", RED, WHITE, FONT_SIZE_16);    
+  // 显示24x24汉字示例
+  lcd_show_chinese(10, 90, (uint8_t*)"遇见司空", GREEN, WHITE, FONT_SIZE_24);
+    // 显示32x32汉字示例
+  lcd_show_chinese(10, 120, (uint8_t*)"遇见司空", BLUE, WHITE, FONT_SIZE_32);
+    // 显示48x48汉字示例
+  lcd_show_chinese(10, 160, (uint8_t*)"遇见司空", BLACK, WHITE, FONT_SIZE_48);
   // 显示图片示例
   // 创建一个简单的测试图片（50x50像素的红色方块）
   static uint16_t test_pic[50 * 50];
@@ -120,10 +125,9 @@ int main(void)
   }
   
   // 显示测试图片
-  lcd_show_picture(10, 120, 50, 50, (const uint8_t *)test_pic);
+  lcd_show_picture(10, 240, 50, 50, (const uint8_t *)test_pic);
   
-  // 显示32x32汉字示例
-  lcd_show_chinese(10, 180, (uint8_t*)"遇见司空", BLUE, WHITE, FONT_SIZE_32);
+
   
 
   /* USER CODE END 2 */
