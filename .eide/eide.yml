@@ -6,6 +6,7 @@ packDir: null
 srcDirs:
   - Core
   - Drivers
+  - APP
 virtualFolder:
   name: <virtual_root>
   files:
@@ -29,6 +30,8 @@ targets:
         - Drivers/CMSIS/Include
         - Drivers/BSP
         - Drivers/BSP/bsp_lcd
+        - APP/font
+        - APP/imag
       libList: []
     excludeList:
       - Drivers/BSP/bsp_lcd/lcd_ex.c
