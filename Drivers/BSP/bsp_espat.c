@@ -109,10 +109,10 @@ static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
     while (rxlen < sizeof(rxbuf) - 1)
     {
         // 检查 RXNE (接收数据寄存器非空) 标志位
-        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+        if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) == SET)
         {
             // 读取数据寄存器 DR
-            uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
+            uint8_t data = (uint8_t)(huart2.Instance->DR & 0xFF);
             
             rxbuf[rxlen++] = data;
             rxbuf[rxlen] = '\0';
