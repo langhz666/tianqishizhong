@@ -2,19 +2,23 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include "stm32f4xx_hal.h" // æ ¹æ®ä½ çš„å…·ä½“èŠ¯ç‰‡å‹å·ï¼Œå¯èƒ½æ˜¯ stm32f1xx_hal.h ç­‰
+#include "stm32f4xx_hal.h" // ÇëÈ·±£ÕâÀï¶ÔÓ¦ÄãµÄĞ¾Æ¬ĞÍºÅ£¬Èç F1 ÔòÊÇ stm32f1xx_hal.h
 #include "bsp_espat.h"
 
-// è°ƒè¯•å¼€å…³ï¼š1å¼€å¯printfè°ƒè¯•ï¼Œ0å…³é—­
-#define ESP_AT_DEBUG    0
+// µ÷ÊÔ¿ª¹Ø£º1¿ªÆôprintfµ÷ÊÔÈÕÖ¾£¬0¹Ø±Õ
+#define ESP_AT_DEBUG    1
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-/* * å¼•ç”¨å¤–éƒ¨å®šä¹‰çš„ä¸²å£å¥æŸ„ã€‚
- * è¯·ç¡®ä¿åœ¨ main.c æˆ– usart.c ä¸­å®šä¹‰äº† huart2 å¹¶å®Œæˆäº†åˆå§‹åŒ–ã€‚
+/* * ÒıÓÃÍâ²¿¶¨ÒåµÄ´®¿Ú¾ä±ú¡£
+ * ÇëÈ·±£ÔÚ main.c ÖĞ¶¨ÒåÁË huart2 ²¢Íê³ÉÁË³õÊ¼»¯¡£
  */
 extern UART_HandleTypeDef huart2;
-#define ESP_UART_HANDLE &huart2
+
+/* * ¡¾¹Ø¼üĞŞ¸´¡¿¼ÓÉÏÀ¨ºÅ£¡
+ * ĞŞ¸´ÁËÓÅÏÈ¼¶ÎÊÌâ£º(&huart2)->Instance ²ÅÊÇºÏ·¨µÄ
+ */
+#define ESP_UART_HANDLE (&huart2)
 
 typedef enum
 {
@@ -39,42 +43,70 @@ static const at_ack_match_t at_ack_matches[] =
     {AT_ACK_READY, "ready\r\n"},
 };
 
-static char rxbuf[1024];
+static char rxbuf[1024]; // ½ÓÊÕ»º³åÇø
 
+// ÄÚ²¿º¯ÊıÉùÃ÷
 static void esp_at_usart_write(const char *data);
 
-/* * ä¸²å£åˆå§‹åŒ–å‡½æ•°
- * åœ¨ HAL åº“ä¸­ï¼Œç¡¬ä»¶åˆå§‹åŒ–é€šå¸¸ç”± CubeMX ç”Ÿæˆçš„ä»£ç  (main.c) å®Œæˆã€‚
- * è¿™é‡Œä»…åšå ä½æˆ–æ”¾ç½®ç‰¹å®šçš„é‡ç½®é€»è¾‘ã€‚
+/* * µ×²ã½ÓÊÕº¯Êı£¨ºËĞÄĞŞ¸´²¿·Ö£©
+ * Ôö¼ÓÁËÇå³ı ORE (Overrun Error) µÄÂß¼­£¬·ÀÖ¹¸ß²¨ÌØÂÊÏÂËÀËø
  */
-static void esp_at_usart_init(void)
+static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
 {
-    // å¦‚æœéœ€è¦æ¸…é™¤ä¹‹å‰çš„é”™è¯¯çŠ¶æ€ï¼Œå¯ä»¥åœ¨è¿™é‡Œæ·»åŠ 
-    // ä¾‹å¦‚ï¼š__HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
+    uint32_t rxlen = 0;
+    // ¡¾ĞŞ¸´¡¿É¾³ıÁËÎ´Ê¹ÓÃµÄ line ±äÁ¿£¬Ïû³ı¾¯¸æ
+    uint32_t start = HAL_GetTick();
+    
+    // Çå¿Õ»º³åÇø
+    memset(rxbuf, 0, sizeof(rxbuf));
+    
+    while (rxlen < sizeof(rxbuf) - 1)
+    {
+        // 1. ¹Ø¼üĞŞ¸´£º¼ì²é²¢Çå³ı ORE Òç³ö´íÎó±êÖ¾
+        // Èç¹ûÊı¾İÀ´µÃÌ«¿ì£¬RXNE»¹Ã»´¦ÀíÍê£¬ORE¾Í»áÖÃÎ»£¬µ¼ÖÂRXNE²»ÔÙ´¥·¢
+        if(__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_ORE))
+        {
+            __HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
+            // ¶ÁÈ¡Ò»´ÎÊı¾İ¼Ä´æÆ÷£¬Å×Æú´íÎóÊı¾İ
+            (void)ESP_UART_HANDLE->Instance->DR; 
+        }
+
+        // 2. ¼ì²éÊÇ·ñÓĞĞÂÊı¾İ (RXNE)
+        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+        {
+            // ¶ÁÈ¡Êı¾İ
+            uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
+            
+            rxbuf[rxlen++] = data;
+            
+            // Ã¿´ÎÓöµ½»»ĞĞ·û£¬¼ì²éÒ»´ÎÊÇ·ñÆ¥Åä¹Ø¼ü´Ê
+            if (rxbuf[rxlen - 1] == '\n')
+            {
+                // ±éÀú¹Ø¼ü´Ê±í
+                for (uint32_t i = 0; i < ARRAY_SIZE(at_ack_matches); i++)
+                {
+                    // Ê¹ÓÃ strstr ²éÕÒ×Ó´®
+                    if (strstr(rxbuf, at_ack_matches[i].string) != NULL)
+                    {
+                        return at_ack_matches[i].ack;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // 3. ³¬Ê±¼ì²é
+            if ((HAL_GetTick() - start) >= timeout)
+            {
+                return AT_ACK_NONE;
+            }
+        }
+    }
+    
+    return AT_ACK_NONE;
 }
 
-bool esp_at_init(void)
-{
-    esp_at_usart_init();
-    
-    // ç»™æ¨¡å—ä¸Šç”µåä¸€ç‚¹ç¼“å†²æ—¶é—´
-    HAL_Delay(500);
-    
-    // å‘é€ AT æµ‹è¯•æŒ‡ä»¤ï¼Œå¤šå‘å‡ æ¬¡ç¡®ä¿åŒæ­¥
-    esp_at_write_command("AT", 100);
-    
-    if (!esp_at_write_command("AT", 100))
-        return false;
-        
-    if (!esp_at_write_command("AT+RESTORE", 2000))
-        return false;
-        
-    if (!esp_at_wait_ready(5000))
-        return false;
-    
-    return true;
-}
-
+/* µ×²ã·¢ËÍº¯Êı */
 static void esp_at_usart_write(const char *data)
 {
     if (data && *data)
@@ -86,82 +118,219 @@ static void esp_at_usart_write(const char *data)
     HAL_UART_Transmit(ESP_UART_HANDLE, newline, 2, 100);
 }
 
-static at_ack_t match_internal_ack(const char *str)
-{
-    for (uint32_t i = 0; i < ARRAY_SIZE(at_ack_matches); i++)
-    {
-        // ä½¿ç”¨ strstr è¿›è¡Œå­ä¸²åŒ¹é…ï¼Œæé«˜å¯¹ä¹±ç æˆ–å‰ç¼€å­—ç¬¦çš„å®¹é”™æ€§
-        if (strstr(str, at_ack_matches[i].string) != NULL)
-            return at_ack_matches[i].ack;
-    }
-    
-    return AT_ACK_NONE;
-}
-
-static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
-{
-    uint32_t rxlen = 0;
-    const char *line = rxbuf;
-    uint32_t start = HAL_GetTick(); // ä½¿ç”¨ HAL åº“çš„æ¯«ç§’è®¡æ•°å™¨
-    
-    rxbuf[0] = '\0';
-    
-    while (rxlen < sizeof(rxbuf) - 1)
-    {
-        // æ£€æŸ¥ RXNE (æ¥æ”¶æ•°æ®å¯„å­˜å™¨éç©º) æ ‡å¿—ä½
-        if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) == SET)
-        {
-            // è¯»å–æ•°æ®å¯„å­˜å™¨ DR
-            uint8_t data = (uint8_t)(huart2.Instance->DR & 0xFF);
-            
-            rxbuf[rxlen++] = data;
-            rxbuf[rxlen] = '\0';
-            
-            if (rxbuf[rxlen - 1] == '\n')
-            {
-                at_ack_t ack = match_internal_ack(line);
-                if (ack != AT_ACK_NONE)
-                    return ack;
-                line = rxbuf + rxlen;
-            }
-        }
-        else
-        {
-            // è¶…æ—¶æ£€æŸ¥
-            if ((HAL_GetTick() - start) >= timeout)
-            {
-                return AT_ACK_NONE;
-            }
-        }
-    }
-    
-    return AT_ACK_NONE;
-}
-
+/* µÈ´ıÌØ¶¨ÏìÓ¦£¨Ö÷ÒªÊÇ ready£© */
 bool esp_at_wait_ready(uint32_t timeout)
 {
+    // ¸´ÓÃ½ÓÊÕÂß¼­£¬µÈ´ı "ready"
     return esp_at_usart_wait_receive(timeout) == AT_ACK_READY;
 }
 
+/* ·¢ËÍÖ¸Áî²¢µÈ´ı OK */
 bool esp_at_write_command(const char *command, uint32_t timeout)
 {
 #if ESP_AT_DEBUG
-    printf("[DEBUG] Send: %s\n", command);
+    printf("[CMD] >> %s\n", command);
 #endif
 
     esp_at_usart_write(command);
     at_ack_t ack = esp_at_usart_wait_receive(timeout);
 
 #if ESP_AT_DEBUG
-    printf("[DEBUG] Response:\n%s\n", rxbuf);
+    if(ack == AT_ACK_OK) printf("[ACK] << OK\n");
+    else if(ack == AT_ACK_ERROR) printf("[ACK] << ERROR\n");
+    else printf("[ACK] << TIMEOUT/OTHER\n");
 #endif
 
     return ack == AT_ACK_OK;
 }
 
+/* »ñÈ¡×îºóÒ»´ÎÏìÓ¦µÄ»º³åÇøÄÚÈİ */
 const char *esp_at_get_response(void)
 {
     return rxbuf;
+}
+
+/* * Ä£¿é³õÊ¼»¯º¯Êı£¨ĞŞ¸´ÁË³õÊ¼»¯Âß¼­£©
+ */
+bool esp_at_init(void)
+{
+    uint32_t start;
+    uint32_t rxlen;
+
+    // Çå³ı¿ÉÄÜ´æÔÚµÄ´íÎó±êÖ¾
+    __HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
+    __HAL_UART_CLEAR_NEFLAG(ESP_UART_HANDLE);
+    __HAL_UART_CLEAR_FEFLAG(ESP_UART_HANDLE);
+
+    printf("[ESP] Hardware resetting...\n");
+    HAL_Delay(500);
+    
+    // »Ø»·²âÊÔ£º½«STM32µÄTXºÍRX¶Ì½Ó£¬²âÊÔUARTÊÇ·ñ¹¤×÷
+    printf("[TEST] Loopback test - Please short PA2(TX) to PA3(RX)\n");
+    HAL_Delay(2000);
+    
+    huart2.Init.BaudRate = 115200;
+    HAL_UART_Init(&huart2);
+    
+    const char *test_msg = "LOOPBACK";
+    HAL_UART_Transmit(&huart2, (uint8_t*)test_msg, strlen(test_msg), 100);
+    
+    start = HAL_GetTick();
+    rxlen = 0;
+    memset(rxbuf, 0, sizeof(rxbuf));
+    
+    while ((HAL_GetTick() - start) < 500 && rxlen < sizeof(rxbuf) - 1)
+    {
+        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+        {
+            uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
+            rxbuf[rxlen++] = data;
+        }
+    }
+    
+    if (rxlen > 0)
+    {
+        printf("[TEST] Loopback received: %s\n", rxbuf);
+        if (strcmp(rxbuf, test_msg) == 0)
+        {
+            printf("[TEST] Loopback test PASSED - STM32 UART is working\n");
+        }
+        else
+        {
+            printf("[TEST] Loopback test FAILED - Data mismatch\n");
+        }
+    }
+    else
+    {
+        printf("[TEST] Loopback test FAILED - No data received\n");
+        printf("[TEST] STM32 UART may be broken or not configured correctly\n");
+    }
+    
+    printf("[TEST] Please remove short and connect ESP32\n");
+    HAL_Delay(2000);
+    
+    // ÏÈ¸´Î»ESP32£¬Çå³ı¿ÉÄÜµÄ´íÎó×´Ì¬
+    printf("[ESP] Resetting ESP32...\n");
+    esp_at_usart_write("AT+RST");
+    HAL_Delay(2000);
+    
+    // Çå¿Õ½ÓÊÕ»º³åÇø£¬µÈ´ıESP32Æô¶¯
+    memset(rxbuf, 0, sizeof(rxbuf));
+    uint32_t reset_start = HAL_GetTick();
+    while ((HAL_GetTick() - reset_start) < 3000)
+    {
+        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+        {
+            (void)ESP_UART_HANDLE->Instance->DR;
+        }
+    }
+    
+    // ³¢ÊÔ²»Í¬µÄ²¨ÌØÂÊ
+    const uint32_t baud_rates[] = {115200, 9600, 57600, 38400, 74880, 230400};
+    
+    for (int i = 0; i < 6; i++)
+    {
+        printf("[ESP] Trying baud rate: %lu\n", baud_rates[i]);
+        
+        // ÖØĞÂ³õÊ¼»¯´®¿Ú
+        huart2.Init.BaudRate = baud_rates[i];
+        if (HAL_UART_Init(&huart2) != HAL_OK)
+        {
+            printf("[ESP] Failed to set baud rate %lu\n", baud_rates[i]);
+            continue;
+        }
+        
+        // Çå¿Õ½ÓÊÕ»º³åÇø
+        memset(rxbuf, 0, sizeof(rxbuf));
+        
+        // ·¢ËÍ AT ²âÊÔÖ¸Áî
+        esp_at_usart_write("AT");
+        
+        // µÈ´ı1Ãë£¬ÊÕ¼¯ËùÓĞ½ÓÊÕµ½µÄÊı¾İ
+        start = HAL_GetTick();
+        rxlen = 0;
+        
+        while ((HAL_GetTick() - start) < 1000 && rxlen < sizeof(rxbuf) - 1)
+        {
+            if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+            {
+                uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
+                rxbuf[rxlen++] = data;
+            }
+        }
+        
+        // ´òÓ¡½ÓÊÕµ½µÄÔ­Ê¼Êı¾İ
+        if (rxlen > 0)
+        {
+            printf("[ESP] Received %lu bytes: ", rxlen);
+            for (uint32_t j = 0; j < rxlen && j < 32; j++)
+            {
+                printf("%02X ", rxbuf[j]);
+            }
+            printf("\n");
+            
+            // ¼ì²éÊÇ·ñ°üº¬ "OK"
+            if (strstr((char*)rxbuf, "OK") != NULL)
+            {
+                printf("[OK] ESP32 detected at %lu baud\n", baud_rates[i]);
+                goto baud_found;
+            }
+        }
+        else
+        {
+            printf("[ESP] No data received\n");
+        }
+    }
+    
+    printf("[ERROR] Cannot detect ESP32 baud rate\n");
+    printf("[ERROR] Possible causes:\n");
+    printf("[ERROR] 1. ESP32 TX not connected to STM32 RX (PA3)\n");
+    printf("[ERROR] 2. ESP32 using wrong UART pins\n");
+    printf("[ERROR] 3. ESP32 TX pin is damaged\n");
+    printf("[ERROR] 4. ESP32 AT firmware not responding\n");
+    return false;
+    
+baud_found:
+    // 2. Èí¸´Î»
+    printf("[ESP] Sending AT+RST...\n");
+    esp_at_usart_write("AT+RST");
+    
+    // 3. µÈ´ıESP32ÖØÆôÍê³É
+    // Ä£¿éÖØÆôĞèÒªÊ±¼ä£¬¸øÓè 5Ãë µÄÊ±¼ä
+    printf("[ESP] Waiting for ESP32 to restart...\n");
+    HAL_Delay(5000);
+    
+    // 4. Çå¿Õ½ÓÊÕ»º³åÇø
+    memset(rxbuf, 0, sizeof(rxbuf));
+    start = HAL_GetTick();
+    while ((HAL_GetTick() - start) < 1000)
+    {
+        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+        {
+            (void)ESP_UART_HANDLE->Instance->DR;
+        }
+    }
+    
+    // 5. ³¢ÊÔ·¢ËÍATÃüÁîÑéÖ¤ESP32ÊÇ·ñÕı³£
+    printf("[ESP] Sending AT to verify...\n");
+    if (!esp_at_write_command("AT", 1000))
+    {
+        printf("[ESP] AT failed after reset, trying again...\n");
+        HAL_Delay(1000);
+        if (!esp_at_write_command("AT", 1000))
+        {
+            printf("[ESP] ESP32 not responding after reset\n");
+            return false;
+        }
+    }
+    
+    // 6. ¹Ø±Õ»ØÏÔ (ÈÃ½ÓÊÕ¸ü¸É¾»)
+    esp_at_write_command("ATE0", 500);
+    
+    // 7. ÉèÖÃÎª Station Ä£Ê½
+    esp_at_wifi_init();
+    
+    return true;
 }
 
 bool esp_at_wifi_init(void)
@@ -169,48 +338,56 @@ bool esp_at_wifi_init(void)
     return esp_at_write_command("AT+CWMODE=1", 2000);
 }
 
+/* Á¬½Ó WiFi (Ôö¼ÓÁË»º³åÇø°²È«¼ì²é) */
 bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
 {
     if (ssid == NULL || pwd == NULL)
         return false;
     
     char cmd[128];
-    // AT+CWJAP="SSID","PWD"
+    // Ê¹ÓÃ snprintf °²È«Æ´½Ó
     int len = snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"", ssid, pwd);
     
-    if (mac)
-        snprintf(cmd + len, sizeof(cmd) - len, ",\"%s\"", mac);
+    // ¼ì²éÊÇ·ñ³¬³¤
+    if (len < 0 || len >= sizeof(cmd)) {
+        printf("[ESP] SSID or Password too long!\n");
+        return false; 
+    }
     
-    // è¿æ¥ WiFi å¯èƒ½ä¼šæ¯”è¾ƒæ…¢ï¼Œç»™äºˆ 20ç§’ è¶…æ—¶
+    if (mac) {
+        int remain = sizeof(cmd) - len;
+        if (remain > 0) {
+            snprintf(cmd + len, remain, ",\"%s\"", mac);
+        }
+    }
+    
+    // Á¬½Ó WiFi ±È½ÏÂı£¬¸ø 20Ãë ³¬Ê±
+    printf("[ESP] Connecting to WiFi: %s...\n", ssid);
     return esp_at_write_command(cmd, 20000);
 }
 
+// --- ÒÔÏÂÊÇ½âÎöÏà¹Ø¸¨Öúº¯Êı ---
+
 static bool parse_cwstate_response(const char *response, esp_wifi_info_t *info)
 {
-    // å“åº”ç¤ºä¾‹: +CWSTATE:2,"Xiaomi Mi MIX 3_5577"
     response = strstr(response, "+CWSTATE:");
-    if (response == NULL)
-        return false;
+    if (response == NULL) return false;
     
     int wifi_state;
-    // è§£æçŠ¶æ€å’Œ SSID
+    // +CWSTATE:2,"SSID"
     if (sscanf(response, "+CWSTATE:%d,\"%63[^\"]", &wifi_state, info->ssid) != 2)
         return false;
     
     info->connected = (wifi_state == 2);
-    
     return true;
 }
 
 static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 {
-    // å“åº”ç¤ºä¾‹: +CWJAP:"Xiaomi Mi MIX 3_5577","da:b5:3a:e3:2f:60",9,-48,0,1,3,0,1
     response = strstr(response, "+CWJAP:");
-    if (response == NULL)
-        return false;
+    if (response == NULL) return false;
     
-    // è§£æ SSID, BSSID(MAC), Channel, RSSI
-    // æ‚¨çš„å¤´æ–‡ä»¶ä¸­ bssid é•¿åº¦å®šä¹‰ä¸º 18ï¼Œè¿™é‡Œç”¨ %17[^\"] é™åˆ¶è¯»å–é•¿åº¦é˜²æ­¢æº¢å‡º
+    // +CWJAP:"SSID","MAC",...
     if (sscanf(response, "+CWJAP:\"%63[^\"]\",\"%17[^\"]\",%d,%d", 
                info->ssid, info->bssid, &info->channel, &info->rssi) != 4)
         return false;
@@ -220,24 +397,21 @@ static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 
 bool esp_at_get_wifi_info(esp_wifi_info_t *info)
 {
-    if (!esp_at_write_command("AT+CWSTATE?", 2000))
-        return false;
+    // ²éÑ¯×´Ì¬
+    if (!esp_at_write_command("AT+CWSTATE?", 2000)) return false;
+    if (!parse_cwstate_response(esp_at_get_response(), info)) return false;
     
-    if (!parse_cwstate_response(esp_at_get_response(), info))
-        return false;
-    
-    if (!esp_at_write_command("AT+CWJAP?", 2000))
-        return false;
-    
-    if (!parse_cwjap_response(esp_at_get_response(), info))
-        return false;
-    
+    // Èç¹ûÒÑÁ¬½Ó£¬²éÑ¯ÏêÏ¸ĞÅÏ¢
+    if (info->connected) {
+        if (!esp_at_write_command("AT+CWJAP?", 2000)) return false;
+        if (!parse_cwjap_response(esp_at_get_response(), info)) return false;
+    }
     return true;
 }
 
 bool wifi_is_connected(void)
 {
-    esp_wifi_info_t info;
+    esp_wifi_info_t info = {0};
     if (esp_at_get_wifi_info(&info))
     {
         return info.connected;
@@ -245,25 +419,19 @@ bool wifi_is_connected(void)
     return false;
 }
 
+// --- SNTP Ê±¼äÏà¹Ø ---
+
 bool esp_at_sntp_init(void)
 {
-    // è®¾ç½® SNTP æœåŠ¡å™¨ï¼Œæ—¶åŒº +8
-    if (!esp_at_write_command("AT+CIPSNTPCFG=1,8", 2000))
-        return false;
-    
-    return true;
+    return esp_at_write_command("AT+CIPSNTPCFG=1,8", 2000);
 }
 
 static uint8_t month_str_to_num(const char *month_str)
 {
     const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-    for (uint8_t i = 0; i < 12; i++)
-    {
-        if (strncmp(month_str, months[i], 3) == 0)
-        {
-            return i + 1;
-        }
+    for (uint8_t i = 0; i < 12; i++) {
+        if (strncmp(month_str, months[i], 3) == 0) return i + 1;
     }
     return 0;
 }
@@ -272,22 +440,20 @@ static uint8_t weekday_str_to_num(const char *weekday_str)
 {
     const char *weekdays[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
     for (uint8_t i = 0; i < 7; i++) {
-        if (strncmp(weekday_str, weekdays[i], 3) == 0)
-        {
-            return i + 1;
-        }
+        if (strncmp(weekday_str, weekdays[i], 3) == 0) return i + 1;
     }
     return 0;
 }
 
 static bool parse_cipsntptime_response(const char *response, esp_date_time_t *date)
 {
-    // å“åº”ç¤ºä¾‹: +CIPSNTPTIME:Sun Jul 27 14:07:19 2025
-    char weekday_str[8];
-    char month_str[8];
+    char weekday_str[8] = {0};
+    char month_str[8] = {0};
+    
     response = strstr(response, "+CIPSNTPTIME:");
     if (!response) return false;
 
+    // +CIPSNTPTIME:Sun Jul 27 14:07:19 2025
     if (sscanf(response, "+CIPSNTPTIME:%3s %3s %hhu %hhu:%hhu:%hhu %hu", 
                weekday_str, month_str, 
                &date->day, &date->hour, &date->minute, &date->second, &date->year) != 7)
@@ -295,7 +461,6 @@ static bool parse_cipsntptime_response(const char *response, esp_date_time_t *da
     
     date->weekday = weekday_str_to_num(weekday_str);
     date->month = month_str_to_num(month_str);
-    
     return true;
 }
 
@@ -310,15 +475,40 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
     return true;
 }
 
+// --- HTTP Ïà¹Ø ---
+
 const char *esp_at_http_get(const char *url)
 {
-    char *txbuf = rxbuf; // å¤ç”¨æ¥æ”¶ç¼“å†²åŒºä½œä¸ºå‘é€ç¼“å†²åŒº
+    // ¸´ÓÃ½ÓÊÕ»º³åÇø×÷ÎªÃüÁî·¢ËÍ»º³åÇø£¬½ÚÊ¡ÄÚ´æ
+    // ×¢Òâ£ºÈç¹û URL ¼«³¤£¬ÕâÀïĞèÒª¸ü´óµÄ buffer
+    char *txbuf = rxbuf; 
     
-    // æ³¨æ„ï¼šæ£€æŸ¥ URL é•¿åº¦é˜²æ­¢ç¼“å†²åŒºæº¢å‡º
+    // °²È«¼ì²é
+    if(strlen(url) > 512) {
+        printf("[HTTP] URL too long!\n");
+        return NULL;
+    }
+
+    printf("[HTTP] Requesting: %s\n", url);
+
+    // ¹¹Ôì HTTP Ö¸Áî
+    // AT+HTTPCLIENT=2,1,"URL",,,2
+    // 2=GET, 1=Enable content-type, 2=SSL transport(if https)
     int ret = snprintf(txbuf, sizeof(rxbuf), "AT+HTTPCLIENT=2,1,\"%s\",,,2", url);
     if (ret < 0 || ret >= sizeof(rxbuf)) return NULL;
 
-    // HTTP è¯·æ±‚å¯èƒ½å—ç½‘ç»œå½±å“ï¼Œè®¾ç½® 10ç§’ è¶…æ—¶
-    bool ok = esp_at_write_command(txbuf, 10000);
-    return ok ? esp_at_get_response() : NULL;
+    printf("[HTTP] Command: %s\n", txbuf);
+
+    // ·¢ËÍ HTTP ÇëÇó£¬ÍøÂçÑÓ³Ù´ó£¬¸øÓè 10-15Ãë ³¬Ê±
+    bool ok = esp_at_write_command(txbuf, 15000);
+    
+    if (!ok)
+    {
+        printf("[HTTP] Request failed\n");
+        printf("[HTTP] Response: %s\n", esp_at_get_response());
+        return NULL;
+    }
+    
+    printf("[HTTP] Response: %s\n", esp_at_get_response());
+    return esp_at_get_response();
 }

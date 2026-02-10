@@ -102,6 +102,11 @@ int main(void)
   DWT_Delay_Init();
   HAL_GPIO_WritePin(LCD_BL_GPIO_Port, LCD_BL_Pin, GPIO_PIN_RESET);
   printf("[SYS] startup\n");
+
+  // --- 新增代码开始 ---
+  printf("[SYS] Waiting for ESP module to boot...\n");
+  HAL_Delay(3000); // 延时3秒，给WiFi模块充分的启动时间
+  printf("[SYS] startup\n");
   if (!esp_at_init())
   {
     printf("[AT] init failed\n");
