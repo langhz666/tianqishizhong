@@ -52,7 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
+static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Zhuzhou&language=en&unit=c";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
