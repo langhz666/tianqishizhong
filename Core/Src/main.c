@@ -52,7 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=WSB641Z8MVBK&language=en&unit=c";
+static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -202,15 +202,15 @@ int main(void)
           else
           {
             printf("[ERROR] Weather parse failed\n");
-            HAL_Delay(2000);
-            continue;
+            last_weather_time = current_time;
+            output_index = 0;
           }
         }
         else
         {
           printf("[ERROR] Weather HTTP request failed\n");
-          HAL_Delay(2000);
-          continue;
+          last_weather_time = current_time;
+          output_index = 0;
         }
       }
     }
