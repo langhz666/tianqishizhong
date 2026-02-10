@@ -183,7 +183,7 @@ int main(void)
       continue;
     }
     
-    printf("[WEATHER] %s, %s, %.1f\n", weather.city, weather.weather, weather.temperature);
+    printf("[WEATHER] %s, %s, %d\n", weather.city, weather.weather, weather.temperature);
   }
     
 err:

@@ -67,15 +67,19 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	if (now_temperature_response)
 	{
 		printf("[WEATHER] Temperature string: %.50s\n", now_temperature_response);
-		now_temperature_response += strlen("\"temperature\":\"");
+		int skip_len = strlen("\"temperature\":\"");
+		printf("[WEATHER] Skip %d chars\n", skip_len);
+		now_temperature_response += skip_len;
+		printf("[WEATHER] After skip: %.20s\n", now_temperature_response);
 		for (int i = 0; i < 15 && now_temperature_response[i] != '\0' && now_temperature_response[i] != '"'; i++)
 		{
 			temperature_str[i] = now_temperature_response[i];
 		}
+		printf("[WEATHER] Parsed temperature string: '%s' (len=%d)\n", temperature_str, (int)strlen(temperature_str));
 		if (strlen(temperature_str) > 0)
 		{
-			info->temperature = atof(temperature_str);
-			printf("[WEATHER] Temperature: %.1f\n", info->temperature);
+			info->temperature = atoi(temperature_str);
+			printf("[WEATHER] Temperature: %d\n", info->temperature);
 		}
 		else
 		{

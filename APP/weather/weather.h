@@ -10,7 +10,7 @@ typedef struct
 	char loaction[128];
 	char weather[16];
 	int weather_code;
-	float temperature;
+	int temperature;
 } weather_info_t;
 
 bool parse_seniverse_response(const char *response, weather_info_t *info);
