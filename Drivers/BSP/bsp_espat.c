@@ -162,91 +162,20 @@ bool esp_at_init(void)
     __HAL_UART_CLEAR_NEFLAG(ESP_UART_HANDLE);
     __HAL_UART_CLEAR_FEFLAG(ESP_UART_HANDLE);
 
-    printf("[ESP] Hardware resetting...\n");
-    HAL_Delay(500);
-    
-    // 回环测试：将STM32的TX和RX短接，测试UART是否工作
-    printf("[TEST] Loopback test - Please short PA2(TX) to PA3(RX)\n");
-    HAL_Delay(2000);
-    
-    huart2.Init.BaudRate = 115200;
-    HAL_UART_Init(&huart2);
-    
-    const char *test_msg = "LOOPBACK";
-    HAL_UART_Transmit(&huart2, (uint8_t*)test_msg, strlen(test_msg), 100);
-    
-    start = HAL_GetTick();
-    rxlen = 0;
-    memset(rxbuf, 0, sizeof(rxbuf));
-    
-    while ((HAL_GetTick() - start) < 500 && rxlen < sizeof(rxbuf) - 1)
-    {
-        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
-        {
-            uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
-            rxbuf[rxlen++] = data;
-        }
-    }
-    
-    if (rxlen > 0)
-    {
-        printf("[TEST] Loopback received: %s\n", rxbuf);
-        if (strcmp(rxbuf, test_msg) == 0)
-        {
-            printf("[TEST] Loopback test PASSED - STM32 UART is working\n");
-        }
-        else
-        {
-            printf("[TEST] Loopback test FAILED - Data mismatch\n");
-        }
-    }
-    else
-    {
-        printf("[TEST] Loopback test FAILED - No data received\n");
-        printf("[TEST] STM32 UART may be broken or not configured correctly\n");
-    }
-    
-    printf("[TEST] Please remove short and connect ESP32\n");
-    HAL_Delay(2000);
-    
-    // 先复位ESP32，清除可能的错误状态
-    printf("[ESP] Resetting ESP32...\n");
-    esp_at_usart_write("AT+RST");
-    HAL_Delay(2000);
-    
-    // 清空接收缓冲区，等待ESP32启动
-    memset(rxbuf, 0, sizeof(rxbuf));
-    uint32_t reset_start = HAL_GetTick();
-    while ((HAL_GetTick() - reset_start) < 3000)
-    {
-        if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
-        {
-            (void)ESP_UART_HANDLE->Instance->DR;
-        }
-    }
-    
     // 尝试不同的波特率
     const uint32_t baud_rates[] = {115200, 9600, 57600, 38400, 74880, 230400};
     
     for (int i = 0; i < 6; i++)
     {
-        printf("[ESP] Trying baud rate: %lu\n", baud_rates[i]);
-        
-        // 重新初始化串口
         huart2.Init.BaudRate = baud_rates[i];
         if (HAL_UART_Init(&huart2) != HAL_OK)
         {
-            printf("[ESP] Failed to set baud rate %lu\n", baud_rates[i]);
             continue;
         }
         
-        // 清空接收缓冲区
         memset(rxbuf, 0, sizeof(rxbuf));
-        
-        // 发送 AT 测试指令
         esp_at_usart_write("AT");
         
-        // 等待1秒，收集所有接收到的数据
         start = HAL_GetTick();
         rxlen = 0;
         
@@ -259,48 +188,18 @@ bool esp_at_init(void)
             }
         }
         
-        // 打印接收到的原始数据
-        if (rxlen > 0)
+        if (strstr((char*)rxbuf, "OK") != NULL)
         {
-            printf("[ESP] Received %lu bytes: ", rxlen);
-            for (uint32_t j = 0; j < rxlen && j < 32; j++)
-            {
-                printf("%02X ", rxbuf[j]);
-            }
-            printf("\n");
-            
-            // 检查是否包含 "OK"
-            if (strstr((char*)rxbuf, "OK") != NULL)
-            {
-                printf("[OK] ESP32 detected at %lu baud\n", baud_rates[i]);
-                goto baud_found;
-            }
-        }
-        else
-        {
-            printf("[ESP] No data received\n");
+            goto baud_found;
         }
     }
     
-    printf("[ERROR] Cannot detect ESP32 baud rate\n");
-    printf("[ERROR] Possible causes:\n");
-    printf("[ERROR] 1. ESP32 TX not connected to STM32 RX (PA3)\n");
-    printf("[ERROR] 2. ESP32 using wrong UART pins\n");
-    printf("[ERROR] 3. ESP32 TX pin is damaged\n");
-    printf("[ERROR] 4. ESP32 AT firmware not responding\n");
     return false;
     
 baud_found:
-    // 2. 软复位
-    printf("[ESP] Sending AT+RST...\n");
     esp_at_usart_write("AT+RST");
-    
-    // 3. 等待ESP32重启完成
-    // 模块重启需要时间，给予 5秒 的时间
-    printf("[ESP] Waiting for ESP32 to restart...\n");
     HAL_Delay(5000);
     
-    // 4. 清空接收缓冲区
     memset(rxbuf, 0, sizeof(rxbuf));
     start = HAL_GetTick();
     while ((HAL_GetTick() - start) < 1000)
@@ -311,24 +210,16 @@ baud_found:
         }
     }
     
-    // 5. 尝试发送AT命令验证ESP32是否正常
-    printf("[ESP] Sending AT to verify...\n");
     if (!esp_at_write_command("AT", 1000))
     {
-        printf("[ESP] AT failed after reset, trying again...\n");
         HAL_Delay(1000);
         if (!esp_at_write_command("AT", 1000))
         {
-            printf("[ESP] ESP32 not responding after reset\n");
             return false;
         }
     }
     
-    // 6. 关闭回显 (让接收更干净)
     esp_at_write_command("ATE0", 500);
-    
-    // 7. 设置为 Station 模式
-    esp_at_wifi_init();
     
     return true;
 }
@@ -345,12 +236,9 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
         return false;
     
     char cmd[128];
-    // 使用 snprintf 安全拼接
     int len = snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"", ssid, pwd);
     
-    // 检查是否超长
     if (len < 0 || len >= sizeof(cmd)) {
-        printf("[ESP] SSID or Password too long!\n");
         return false; 
     }
     
@@ -361,8 +249,6 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
         }
     }
     
-    // 连接 WiFi 比较慢，给 20秒 超时
-    printf("[ESP] Connecting to WiFi: %s...\n", ssid);
     return esp_at_write_command(cmd, 20000);
 }
 
@@ -454,9 +340,6 @@ static bool parse_cipsntptime_response(const char *response, esp_date_time_t *da
     response = strstr(response, "+CIPSNTPTIME:");
     if (!response) return false;
 
-    printf("[SNTP] Response after strstr: %.100s\n", response);
-
-    // +CIPSNTPTIME:Sun Jul 27 14:07:19 2025
     unsigned int temp_day, temp_hour, temp_minute, temp_second, temp_year;
     int parsed = sscanf(response, "+CIPSNTPTIME:%3s %3s %u %u:%u:%u %u", 
                weekday_str, month_str, 
@@ -467,10 +350,6 @@ static bool parse_cipsntptime_response(const char *response, esp_date_time_t *da
     date->minute = (uint8_t)temp_minute;
     date->second = (uint8_t)temp_second;
     date->year = (uint16_t)temp_year;
-    
-    printf("[SNTP] sscanf parsed %d items\n", parsed);
-    printf("[SNTP] weekday=%s month=%s day=%u hour=%u minute=%u second=%u year=%u\n",
-           weekday_str, month_str, date->day, date->hour, date->minute, date->second, date->year);
     
     if (parsed != 7)
         return false;
@@ -484,8 +363,6 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
 {
     if (!esp_at_write_command("AT+CIPSNTPTIME?", 2000))
         return false;
-    
-    printf("[SNTP] Raw response: %s\n", esp_at_get_response());
     
     if (!parse_cipsntptime_response(esp_at_get_response(), date))
         return false;
@@ -501,32 +378,19 @@ const char *esp_at_http_get(const char *url)
     // 注意：如果 URL 极长，这里需要更大的 buffer
     char *txbuf = rxbuf; 
     
-    // 安全检查
     if(strlen(url) > 512) {
-        printf("[HTTP] URL too long!\n");
         return NULL;
     }
 
-    printf("[HTTP] Requesting: %s\n", url);
-
-    // 构造 HTTP 指令
-    // AT+HTTPCLIENT=2,1,"URL",,,2
-    // 2=GET, 1=Enable content-type, 2=SSL transport(if https)
     int ret = snprintf(txbuf, sizeof(rxbuf), "AT+HTTPCLIENT=2,1,\"%s\",,,2", url);
     if (ret < 0 || ret >= sizeof(rxbuf)) return NULL;
 
-    printf("[HTTP] Command: %s\n", txbuf);
-
-    // 发送 HTTP 请求，网络延迟大，给予 10-15秒 超时
     bool ok = esp_at_write_command(txbuf, 15000);
     
     if (!ok)
     {
-        printf("[HTTP] Request failed\n");
-        printf("[HTTP] Response: %s\n", esp_at_get_response());
         return NULL;
     }
     
-    printf("[HTTP] Response: %s\n", esp_at_get_response());
     return esp_at_get_response();
 }

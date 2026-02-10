@@ -9,23 +9,18 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 {
 	if (response == NULL || strlen(response) == 0)
 	{
-		printf("[WEATHER] Empty response\n");
 		return false;
 	}
-	
-	printf("[WEATHER] Parsing response (first 200 chars): %.200s\n", response);
 	
 	response = strstr(response, "\"results\":");
 	if (response == NULL)
 	{
-		printf("[WEATHER] No 'results' found\n");
 		return false;
 	}
 	
 	const char *location_response = strstr(response, "\"location\":");
 	if (location_response == NULL)
 	{
-		printf("[WEATHER] No 'location' found\n");
 		return false;
 	}
 	
@@ -33,7 +28,6 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	if (loaction_name_response)
 	{
 		sscanf(loaction_name_response, "\"name\": \"%31[^\"]\"", info->city);
-		printf("[WEATHER] City: %s\n", info->city);
 	}
 	
 	const char *loaction_path_response = strstr(location_response, "\"path\":");
@@ -45,7 +39,6 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	const char *now_response = strstr(response, "\"now\":");
 	if (now_response == NULL)
 	{
-		printf("[WEATHER] No 'now' found\n");
 		return false;
 	}
 	
@@ -53,7 +46,6 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	if (now_text_response)
 	{
 		sscanf(now_text_response, "\"text\": \"%15[^\"]\"", info->weather);
-		printf("[WEATHER] Weather: %s\n", info->weather);
 	}
 	
 	const char *now_code_response = strstr(now_response, "\"code\":");
@@ -66,24 +58,14 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	const char *now_temperature_response = strstr(now_response, "\"temperature\":");
 	if (now_temperature_response)
 	{
-		printf("[WEATHER] Temperature string: %.50s\n", now_temperature_response);
-		int skip_len = strlen("\"temperature\":\"");
-		printf("[WEATHER] Skip %d chars\n", skip_len);
-		now_temperature_response += skip_len;
-		printf("[WEATHER] After skip: %.20s\n", now_temperature_response);
+		now_temperature_response += strlen("\"temperature\":\"");
 		for (int i = 0; i < 15 && now_temperature_response[i] != '\0' && now_temperature_response[i] != '"'; i++)
 		{
 			temperature_str[i] = now_temperature_response[i];
 		}
-		printf("[WEATHER] Parsed temperature string: '%s' (len=%d)\n", temperature_str, (int)strlen(temperature_str));
 		if (strlen(temperature_str) > 0)
 		{
 			info->temperature = atoi(temperature_str);
-			printf("[WEATHER] Temperature: %d\n", info->temperature);
-		}
-		else
-		{
-			printf("[WEATHER] Failed to parse temperature\n");
 		}
 	}
 	
