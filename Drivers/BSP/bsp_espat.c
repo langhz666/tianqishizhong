@@ -423,7 +423,8 @@ bool wifi_is_connected(void)
 
 bool esp_at_sntp_init(void)
 {
-    return esp_at_write_command("AT+CIPSNTPCFG=1,8", 2000);
+    esp_at_write_command("AT+CIPSNTPCFG=1,8,\"cn.pool.ntp.org\",\"ntp.aliyun.com\",\"ntp.tencent.com\"", 2000);
+    return true;
 }
 
 static uint8_t month_str_to_num(const char *month_str)
@@ -453,10 +454,25 @@ static bool parse_cipsntptime_response(const char *response, esp_date_time_t *da
     response = strstr(response, "+CIPSNTPTIME:");
     if (!response) return false;
 
+    printf("[SNTP] Response after strstr: %.100s\n", response);
+
     // +CIPSNTPTIME:Sun Jul 27 14:07:19 2025
-    if (sscanf(response, "+CIPSNTPTIME:%3s %3s %hhu %hhu:%hhu:%hhu %hu", 
+    unsigned int temp_day, temp_hour, temp_minute, temp_second, temp_year;
+    int parsed = sscanf(response, "+CIPSNTPTIME:%3s %3s %u %u:%u:%u %u", 
                weekday_str, month_str, 
-               &date->day, &date->hour, &date->minute, &date->second, &date->year) != 7)
+               &temp_day, &temp_hour, &temp_minute, &temp_second, &temp_year);
+    
+    date->day = (uint8_t)temp_day;
+    date->hour = (uint8_t)temp_hour;
+    date->minute = (uint8_t)temp_minute;
+    date->second = (uint8_t)temp_second;
+    date->year = (uint16_t)temp_year;
+    
+    printf("[SNTP] sscanf parsed %d items\n", parsed);
+    printf("[SNTP] weekday=%s month=%s day=%u hour=%u minute=%u second=%u year=%u\n",
+           weekday_str, month_str, date->day, date->hour, date->minute, date->second, date->year);
+    
+    if (parsed != 7)
         return false;
     
     date->weekday = weekday_str_to_num(weekday_str);
@@ -468,6 +484,8 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
 {
     if (!esp_at_write_command("AT+CIPSNTPTIME?", 2000))
         return false;
+    
+    printf("[SNTP] Raw response: %s\n", esp_at_get_response());
     
     if (!parse_cipsntptime_response(esp_at_get_response(), date))
         return false;

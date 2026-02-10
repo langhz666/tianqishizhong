@@ -66,10 +66,20 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 	const char *now_temperature_response = strstr(now_response, "\"temperature\":");
 	if (now_temperature_response)
 	{
-		if (sscanf(now_temperature_response, "\"temperature\": \"%15[^\"]\"", temperature_str) == 1)
+		printf("[WEATHER] Temperature string: %.50s\n", now_temperature_response);
+		now_temperature_response += strlen("\"temperature\":\"");
+		for (int i = 0; i < 15 && now_temperature_response[i] != '\0' && now_temperature_response[i] != '"'; i++)
+		{
+			temperature_str[i] = now_temperature_response[i];
+		}
+		if (strlen(temperature_str) > 0)
 		{
 			info->temperature = atof(temperature_str);
 			printf("[WEATHER] Temperature: %.1f\n", info->temperature);
+		}
+		else
+		{
+			printf("[WEATHER] Failed to parse temperature\n");
 		}
 	}
 	
