@@ -32,6 +32,7 @@ targets:
         - Drivers/BSP/bsp_lcd
         - APP/font
         - APP/imag
+        - APP/weather
       libList: []
     excludeList:
       - Drivers/BSP/bsp_lcd/lcd_ex.c

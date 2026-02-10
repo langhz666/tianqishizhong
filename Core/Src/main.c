@@ -30,6 +30,8 @@
 #include "bsp_dht11.h"
 #include "bsp_delay.h"
 #include "lcd.h"
+#include "weather.h"
+#include "bsp_espat.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,37 +97,104 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   //MX_FSMC_Init();
-  HAL_GPIO_WritePin(LCD_BL_GPIO_Port, LCD_BL_Pin, GPIO_PIN_RESET);
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   DWT_Delay_Init();
-  // lcd_init();
-  // lcd_clear(WHITE);     // 清屏为白色
+  HAL_GPIO_WritePin(LCD_BL_GPIO_Port, LCD_BL_Pin, GPIO_PIN_RESET);
+  printf("[SYS] startup\n");
+  if (!esp_at_init())
+  {
+    printf("[AT] init failed\n");
+    goto err;
+  }
+  printf("[AT] inited\n");
+  if (!esp_at_wifi_init())
+  {
+    printf("[WIFI] init failed\n");
+    goto err;
+  }
+  printf("[WIFI] inited\n");
+  if (!esp_at_connect_wifi("iQOO Neo8 Pro", "lhz19719937532", NULL))
+  {
+    printf("[WIFI] connect failed\n");
+    goto err;
+  }
+  printf("[WIFI] connecting\n");
+  if (!esp_at_sntp_init())
+  {
+    printf("[SNTP] init failed\n");
+    goto err;
+  }
+  printf("[SNTP] inited\n");
+  while (1)
+  {
+    HAL_Delay(2000);
     
-
-  // lcd_display_dir(1); // <--- 添加这一行：设置为横屏模式
-  
-  // lcd_clear(WHITE);
-  
-  // // 现在的宽度足够放下 240 了
-  // //lcd_show_picture(0, 100, 240, 140, gImage_imag_kkedg);
-  // lcd_show_picture(0, 50, 319, 145, gImage_imag_test);
-  
-
-  
-
+    esp_wifi_info_t wifi = { 0 };
+    if (!esp_at_get_wifi_info(&wifi))
+    {
+      printf("[AT] wifi info get failed\n");
+      continue;
+    }
+    
+    if (!wifi.connected)
+    {
+      printf("[WIFI] disconnected\n");
+      continue;
+    }
+    
+    printf("[WIFI] SSID: %s, BSSID: %s, Channel: %d, RSSI: %d\n",
+            wifi.ssid, wifi.bssid, wifi.channel, wifi.rssi);
+    esp_date_time_t date = { 0 };
+    if (!esp_at_sntp_get_time(&date))
+    {
+      printf("[SNTP] get time failed\n");
+      continue;
+    }
+    if (date.year > 2000)
+    {
+      printf("[SNTP] %04u-%02u-%02u %02u:%02u:%02u (%s)\n",
+          date.year, date.month, date.day, date.hour, date.minute, date.second,
+          date.weekday == 1 ? "Monday":
+          date.weekday == 2 ? "Tuesday":
+          date.weekday == 3 ? "Wednesday":
+          date.weekday == 4 ? "Thursday":
+          date.weekday == 5 ? "Friday":
+          date.weekday == 6 ? "Saturday":
+          date.weekday == 7 ? "Sunday" : "Unknown");
+    }
+    
+    weather_info_t weather = { 0 };
+    const char *weather_http_response = esp_at_http_get(weather_url);
+    if (weather_http_response == NULL)
+    {
+      printf("[WEAHTER] http error\n");
+      continue;
+    }
+    
+    if (!parse_seniverse_response(weather_http_response, &weather))
+    {
+      printf("[WEAHTER] parse failed\n");
+      continue;
+    }
+    
+    printf("[WEATHER] %s, %s, %.1f\n", weather.city, weather.weather, weather.temperature);
+  }
+    
+err:
+    while (1)
+    {
+      printf("AT Error\r\n");
+      HAL_Delay(1000);
+    }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    led_toggle(0); /*红灯闪烁*/
-    HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+  
   /* USER CODE END 3 */
 }
 
@@ -150,8 +219,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 25;
-  RCC_OscInitStruct.PLL.PLLN = 336;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
