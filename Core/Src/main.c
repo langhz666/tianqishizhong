@@ -94,7 +94,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
-  MX_FSMC_Init();
+  //MX_FSMC_Init();
+  HAL_GPIO_WritePin(LCD_BL_GPIO_Port, LCD_BL_Pin, GPIO_PIN_RESET);
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   DWT_Delay_Init();
