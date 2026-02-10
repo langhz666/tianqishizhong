@@ -101,96 +101,122 @@ int main(void)
   /* USER CODE BEGIN 2 */
   DWT_Delay_Init();
   HAL_GPIO_WritePin(LCD_BL_GPIO_Port, LCD_BL_Pin, GPIO_PIN_RESET);
+  printf("[SYS] startup\n");
+  //HAL_Delay(3000);
 
+  printf("[SYS] startup\n");
 
   if (!esp_at_init())
   {
     printf("[ERROR] ESP init failed\n");
     goto err;
   }
+  printf("[AT] inited\n");
 
   if (!esp_at_connect_wifi("iQOO Neo8 Pro", "lhz19719937532", NULL))
   {
     printf("[ERROR] WiFi connect failed\n");
     goto err;
   }
+  printf("[WIFI] inited\n");
 
   if (!esp_at_sntp_init())
   {
     printf("[ERROR] SNTP init failed\n");
     goto err;
   }
-
+  printf("[SNTP] inited\n");
   uint32_t last_weather_time = 0;
   uint32_t last_sntp_time = 0;
   uint32_t last_wifi_check_time = 0;
   bool wifi_connected = true;
+  esp_wifi_info_t wifi_info = { 0 };
+  uint8_t output_index = 0;
 
   while (1)
   {
     uint32_t current_time = HAL_GetTick();
-    if (current_time - last_wifi_check_time >= 10000)
+    
+    if (output_index == 0)
     {
-      esp_wifi_info_t wifi = { 0 };
-      if (!esp_at_get_wifi_info(&wifi))
+      if (current_time - last_wifi_check_time >= 10000)
       {
-        printf("[ERROR] WiFi info get failed\n");
-        continue;
+        if (!esp_at_get_wifi_info(&wifi_info))
+        {
+          printf("[ERROR] WiFi info get failed\n");
+          HAL_Delay(2000);
+          continue;
+        }
+        
+        wifi_connected = wifi_info.connected;
+        last_wifi_check_time = current_time;
+        
+        if (wifi_connected)
+        {
+          printf("[WIFI] SSID: %s, BSSID: %s, Channel: %d, RSSI: %d\n",
+                  wifi_info.ssid, wifi_info.bssid, wifi_info.channel, wifi_info.rssi);
+          output_index = 1;
+        }
       }
-      
-      wifi_connected = wifi.connected;
-      last_wifi_check_time = current_time;
+    }
+    else if (output_index == 1)
+    {
+      esp_date_time_t date = { 0 };
+      if (current_time - last_sntp_time >= 2000)
+      {
+        if (!esp_at_sntp_get_time(&date))
+        {
+          printf("[ERROR] SNTP get time failed\n");
+          HAL_Delay(2000);
+          continue;
+        }
+        if (date.year > 2000)
+        {
+          printf("[SNTP] %04u-%02u-%02u %02u:%02u:%02u (%s)\n",
+                date.year, date.month, date.day, date.hour, date.minute, date.second,
+                date.weekday == 1 ? "Monday":
+                date.weekday == 2 ? "Tuesday":
+                date.weekday == 3 ? "Wednesday":
+                date.weekday == 4 ? "Thursday":
+                date.weekday == 5 ? "Friday":
+                date.weekday == 6 ? "Saturday":
+                date.weekday == 7 ? "Sunday" : "Unknown");
+          last_sntp_time = current_time;
+          output_index = 2;
+        }
+      }
+    }
+    else if (output_index == 2)
+    {
+      if (current_time - last_weather_time >= 10000)
+      {
+        weather_info_t weather = { 0 };
+        const char *weather_http_response = esp_at_http_get(weather_url);
+        if (weather_http_response != NULL)
+        {
+          if (parse_seniverse_response(weather_http_response, &weather))
+          {
+            printf("[WEATHER] %s, %s, %d\n", weather.city, weather.weather, weather.temperature);
+            last_weather_time = current_time;
+            output_index = 0;
+          }
+          else
+          {
+            printf("[ERROR] Weather parse failed\n");
+            HAL_Delay(2000);
+            continue;
+          }
+        }
+        else
+        {
+          printf("[ERROR] Weather HTTP request failed\n");
+          HAL_Delay(2000);
+          continue;
+        }
+      }
     }
     
-    if (!wifi_connected)
-    {
-      printf("[ERROR] WiFi disconnected\n");
-      continue;
-    }
-
-    esp_date_time_t date = { 0 };
-    if (current_time - last_sntp_time >= 2000)
-    {
-      if (!esp_at_sntp_get_time(&date))
-      {
-        printf("[ERROR] SNTP get time failed\n");
-        continue;
-      }
-      if (date.year > 2000)
-      {
-        printf("[SNTP] %04u-%02u-%02u %02u:%02u:%02u (%s)\n",
-              date.year, date.month, date.day, date.hour, date.minute, date.second,
-              date.weekday == 1 ? "Monday":
-              date.weekday == 2 ? "Tuesday":
-              date.weekday == 3 ? "Wednesday":
-              date.weekday == 4 ? "Thursday":
-              date.weekday == 5 ? "Friday":
-              date.weekday == 6 ? "Saturday":
-              date.weekday == 7 ? "Sunday" : "Unknown");
-        last_sntp_time = current_time;
-      }
-    }
-    
-    current_time = HAL_GetTick();
-    if (current_time - last_weather_time >= 10000)
-    {
-      weather_info_t weather = { 0 };
-      const char *weather_http_response = esp_at_http_get(weather_url);
-      if (weather_http_response == NULL)
-      {
-        printf("[ERROR] Weather HTTP request failed\n");
-        continue;
-      }
-      
-      if (!parse_seniverse_response(weather_http_response, &weather))
-      {
-        printf("[ERROR] Weather parse failed\n");
-        continue;
-      }
-      
-      printf("[WEATHER] %s, %s, %d\n", weather.city, weather.weather, weather.temperature);
-      last_weather_time = current_time;
-    }
+    HAL_Delay(2000);
   }
 
 err:

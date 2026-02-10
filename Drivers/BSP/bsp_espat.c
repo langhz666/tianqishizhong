@@ -6,7 +6,7 @@
 #include "bsp_espat.h"
 
 // 调试开关：1开启printf调试日志，0关闭
-#define ESP_AT_DEBUG    1
+#define ESP_AT_DEBUG    0
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
