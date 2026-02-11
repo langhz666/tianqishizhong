@@ -1287,222 +1287,35 @@ void lcd_show_string(uint16_t x, uint16_t y, uint16_t width, uint16_t height, ui
 }
 
 
-
-
-/**
- * @brief       显示单个16x16汉字
- * @param       x,y       : 显示坐标
- * @param       font_data : 字模数据指针
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-static void lcd_draw_cn_16(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
-{
-    uint8_t i, j, k;
-    uint8_t temp;
-    
-    // 遍历16行
-    for (i = 0; i < 16; i++)
-    {
-        // 每行2个字节 (16点)
-        for (j = 0; j < 2; j++)
-        {
-            temp = font_data[i * 2 + j]; // 取出数据
-            // 遍历每个字节的8个位
-            for (k = 0; k < 8; k++)
-            {
-                // 判断当前位是1还是0
-                if (temp & 0x80) 
-                {
-                    lcd_draw_point(x + j * 8 + k, y + i, color); // 1: 画字体颜色
-                }
-                else
-                {
-                    // 0: 画背景颜色 (如果不需要背景色，注释掉这一行即可实现透明背景)
-                    lcd_draw_point(x + j * 8 + k, y + i, back_color); 
-                }
-                temp <<= 1; // 移位，准备判断下一位
-            }
-        }
-    }
-}
-
+static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t size, uint16_t color, uint16_t back_color);
 
 /**
- * @brief       显示单个24x24汉字
- * @param       x,y       : 显示坐标
- * @param       font_data : 字模数据指针
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-static void lcd_draw_cn_24(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
-{
-    uint8_t i, j, k;
-    uint8_t temp;
-    
-    // 遍历24行
-    for (i = 0; i < 24; i++)
-    {
-        // 每行3个字节 (24点)
-        for (j = 0; j < 3; j++)
-        {
-            temp = font_data[i * 3 + j];
-            for (k = 0; k < 8; k++)
-            {
-                if (temp & 0x80) 
-                    lcd_draw_point(x + j * 8 + k, y + i, color);
-                else
-                    lcd_draw_point(x + j * 8 + k, y + i, back_color);
-                
-                temp <<= 1;
-            }
-        }
-    }
-}
-
-/**
- * @brief       显示单个48x48汉字
- * @param       x,y       : 显示坐标
- * @param       font_data : 字模数据指针
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-static void lcd_draw_cn_48(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
-{
-    uint8_t i, j, k;
-    uint8_t temp;
-    
-    // 遍历48行
-    for (i = 0; i < 48; i++)
-    {
-        // 每行6个字节 (48点)
-        for (j = 0; j < 6; j++)
-        {
-            temp = font_data[i * 6 + j];
-            for (k = 0; k < 8; k++)
-            {
-                if (temp & 0x80) 
-                    lcd_draw_point(x + j * 8 + k, y + i, color);
-                else
-                    lcd_draw_point(x + j * 8 + k, y + i, back_color);
-                
-                temp <<= 1;
-            }
-        }
-    }
-}
-
-/**
- * @brief       显示单个32x32汉字
- * @param       x,y       : 显示坐标
- * @param       font_data : 字模数据指针
- * @param       color     : 字体颜色
- * @param       back_color: 背景颜色
- * @retval      无
- */
-static void lcd_draw_cn_32(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t color, uint16_t back_color)
-{
-    uint8_t i, j, k;
-    uint8_t temp;
-    
-    // 遍历32行
-    for (i = 0; i < 32; i++)
-    {
-        // 每行4个字节 (32点)
-        for (j = 0; j < 4; j++)
-        {
-            temp = font_data[i * 4 + j]; // 取出数据
-            // 遍历每个字节的8个位
-            for (k = 0; k < 8; k++)
-            {
-                // 判断当前位是1还是0
-                if (temp & 0x80) 
-                {
-                    lcd_draw_point(x + j * 8 + k, y + i, color); // 1: 画字体颜色
-                }
-                else
-                {
-                    // 0: 画背景颜色 (如果不需要背景色，注释掉这一行即可实现透明背景)
-                    lcd_draw_point(x + j * 8 + k, y + i, back_color); 
-                }
-                temp <<= 1; // 移位，准备判断下一位
-            }
-        }
-    }
-}
-
-/**
- * @brief       显示汉字字符串（支持16/24/32/48字体）
+ * @brief       显示汉字字符串（使用font文件夹中的字体）
  * @param       x,y         : 起始坐标
  * @param       str         : 汉字字符串
  * @param       color       : 字体颜色
  * @param       back_color  : 背景颜色
- * @param       font_size   : 字体大小
+ * @param       font        : 字体结构体指针
  * @retval      无
  */
-void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, FONT_SIZE font_size)
+void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font)
 {
     uint16_t x0 = x;
-    uint8_t i = 0;
     
     while (*str != 0) 
     {
-        if (font_size == FONT_SIZE_16)
+        const font_chinese_t *cn = font->chinese;
+        while (cn != NULL && cn->name != NULL)
         {
-            for (i = 0; cn_16x16[i].Index[0] != 0; i++)
+            if (strncmp(cn->name, (const char *)str, 3) == 0)
             {
-                if (memcmp(cn_16x16[i].Index, str, 3) == 0)
-                {
-                    lcd_draw_cn_16(x, y, cn_16x16[i].Msk, color, back_color);
-                    x += 16;
-                    if (x > lcddev.width - 16) { x = x0; y += 16; }
-                    break;
-                }
+                lcd_draw_cn_custom(x, y, cn->model, font->size, color, back_color);
+                x += font->size;
+                if (x > lcddev.width - font->size) { x = x0; y += font->size; }
+                break;
             }
+            cn++;
         }
-        else if (font_size == FONT_SIZE_24) // 新增 24x24 处理
-        {
-            for (i = 0; cn_24x24[i].Index[0] != 0; i++)
-            {
-                if (memcmp(cn_24x24[i].Index, str, 3) == 0)
-                {
-                    lcd_draw_cn_24(x, y, cn_24x24[i].Msk, color, back_color);
-                    x += 24;
-                    if (x > lcddev.width - 24) { x = x0; y += 24; }
-                    break;
-                }
-            }
-        }
-        else if (font_size == FONT_SIZE_32)
-        {
-            for (i = 0; cn_32x32[i].Index[0] != 0; i++)
-            {
-                if (memcmp(cn_32x32[i].Index, str, 3) == 0)
-                {
-                    lcd_draw_cn_32(x, y, cn_32x32[i].Msk, color, back_color);
-                    x += 32;
-                    if (x > lcddev.width - 32) { x = x0; y += 32; }
-                    break;
-                }
-            }
-        }
-        else if (font_size == FONT_SIZE_48) // 新增 48x48 处理
-        {
-            for (i = 0; cn_48x48[i].Index[0] != 0; i++)
-            {
-                if (memcmp(cn_48x48[i].Index, str, 3) == 0)
-                {
-                    lcd_draw_cn_48(x, y, cn_48x48[i].Msk, color, back_color);
-                    x += 48;
-                    if (x > lcddev.width - 48) { x = x0; y += 48; }
-                    break;
-                }
-            }
-        }
-        
         str += 3; // UTF-8 下一个汉字
     }
 }
@@ -1545,5 +1358,29 @@ void lcd_show_picture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, c
     for (i = 0; i < width * height; i++)
     {
         LCD->LCD_RAM = pic_data[i];
+    }
+}
+
+static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t size, uint16_t color, uint16_t back_color)
+{
+    uint8_t i, j, k;
+    uint8_t temp;
+    uint16_t x0 = x;
+    uint16_t bytes_per_line = (size + 7) / 8;
+    
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            temp = font_data[i * bytes_per_line + j / 8];
+            if (temp & (0x80 >> (j % 8)))
+            {
+                lcd_draw_point(x + j, y + i, color);
+            }
+            else
+            {
+                lcd_draw_point(x + j, y + i, back_color);
+            }
+        }
     }
 }

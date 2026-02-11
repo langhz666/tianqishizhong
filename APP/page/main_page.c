@@ -9,14 +9,11 @@
 #include "app.h"
 #include "font.h"
 
-// 颜色转换 (RGB888 -> RGB565)
-// 如果你没有 mkcolor 宏，可以使用以下公式或在线工具转换
-// 这里直接定义转换后的近似值
 #define COLOR_BG_TIME     0xF7DE // mkcolor(248, 248, 248) -> White-ish
 #define COLOR_BG_INNER    0x86D5 // mkcolor(136, 217, 234) -> Light Blue
 #define COLOR_BG_OUTDOOR  0xFD49 // mkcolor(254, 135, 75)  -> Orange
 
-// 注意：请根据 imag.h 中实际图片的宽高修改以下宏
+
 #define ICON_WIFI_W      20 
 #define ICON_WIFI_H      20
 #define ICON_TEMP_W      20
@@ -24,64 +21,33 @@
 #define ICON_WEATHER_W   40
 #define ICON_WEATHER_H   40
 
-// 声明外部变量或函数（如果不在头文件中）
-// void main_page_redraw_wifi_ssid(const char *ssid);
-// void main_page_redraw_inner_temperature(float temperature);
-// void main_page_redraw_inner_humidity(float humidity);
-// void main_page_redraw_outdoor_city(const char *city);
-// void main_page_redraw_outdoor_temperature(float temperature);
-// void main_page_redraw_outdoor_weather_icon(int code);
 
-// 假设 WIFI_SSID 定义在某处
 #ifndef WIFI_SSID
 #define WIFI_SSID "Connecting..."
 #endif
 
 void main_page_display(void)
 {
-    // 1. 全屏黑色背景
     lcd_clear(BLACK);
-    
-    // 2. 时间区域 (顶部白色区域)
     lcd_fill(15, 15, 224, 154, COLOR_BG_TIME);
-    
-    // Wifi 图标 (注意：需确认 icon_wifi 是数组还是结构体，这里假设是数组)
     lcd_show_picture(23, 20, ICON_WIFI_W, ICON_WIFI_H, (const uint8_t *)&icon_wifi);
-    
-    // 显示 WiFi SSID
     main_page_redraw_wifi_ssid(WIFI_SSID);
-    
-    // 时间初始显示 (原代码用76号字体，这里降级为32号)
     g_back_color = COLOR_BG_TIME; // 设置文字背景色
     lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
-    
-    // 日期初始显示
     lcd_show_string(35, 121, 200, 24, 24, "----/--/--", GRAY); // 星期几是中文，需要单独处理或扩展字库
-    
-    // 3. 室内环境区域 (左下蓝色区域)
     lcd_fill(15, 165, 114, 304, COLOR_BG_INNER);
-    
-    // 显示中文 "室内环境"
     g_back_color = COLOR_BG_INNER;
-    // 注意：正点原子 lcd_show_chinese 需要字库支持，且通常只支持特定大小(16/24/32)
-    // 这里假设使用 24号字体显示中文
-    lcd_show_chinese(19, 170, (uint8_t *)"室内环境", BLACK, COLOR_BG_INNER, FONT_SIZE_24); 
-    
+    lcd_show_chinese(19, 170, (uint8_t *)"室内环境", BLACK, COLOR_BG_INNER, &font24_maple_bold);
     lcd_show_string(86, 191, 20, 32, 32, "C", BLACK);
     lcd_show_string(91, 262, 20, 32, 32, "%", BLACK);
-    
     main_page_redraw_inner_temperature(99.9f); // 初始值
     main_page_redraw_inner_humidity(99.9f);    // 初始值
-    
     // 4. 室外环境区域 (右下橙色区域)
     lcd_fill(125, 165, 224, 304, COLOR_BG_OUTDOOR);
-    
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
-    
     // 温度计图标
     lcd_show_picture(139, 239, ICON_TEMP_W, ICON_TEMP_H, (const uint8_t *)&icon_wenduji);
-    
     main_page_redraw_outdoor_city("合肥"); // 假设 city 是纯汉字，需特殊处理
     main_page_redraw_outdoor_temperature(99.9f);
     main_page_redraw_outdoor_weather_icon(-1);
@@ -130,10 +96,8 @@ void main_page_redraw_date(rtc_date_time_t *date)
     lcd_show_string(35, 121, 120, 24, 24, str_date, GRAY);
     
     // 显示 "星期X" (中文)
-    // 假设 lcd_show_chinese 支持 "星期" 和 数字对应的汉字
-    // 坐标需要手动计算偏移：10个字符 * 12像素 = 120像素偏移
-    lcd_show_chinese(35 + 120, 121, (uint8_t *)"星期", GRAY, COLOR_BG_TIME, FONT_SIZE_24);
-    lcd_show_chinese(35 + 120 + 48, 121, (uint8_t *)week_str, GRAY, COLOR_BG_TIME, FONT_SIZE_24);
+    lcd_show_chinese(35 + 120, 121, (uint8_t *)"星期", GRAY, COLOR_BG_TIME, &font24_maple_bold);
+    lcd_show_chinese(35 + 120 + 48, 121, (uint8_t *)week_str, GRAY, COLOR_BG_TIME, &font24_maple_bold);
 }
 
 void main_page_redraw_inner_temperature(float temperature)
@@ -165,8 +129,7 @@ void main_page_redraw_inner_humidity(float humidity)
 void main_page_redraw_outdoor_city(const char *city)
 {
     g_back_color = COLOR_BG_OUTDOOR;
-    // 假设 city 是中文
-    lcd_show_chinese(127, 170, (uint8_t *)city, BLACK, COLOR_BG_OUTDOOR, FONT_SIZE_24);
+    lcd_show_chinese(127, 170, (uint8_t *)city, BLACK, COLOR_BG_OUTDOOR, &font24_maple_bold);
 }
 
 void main_page_redraw_outdoor_temperature(float temperature)
