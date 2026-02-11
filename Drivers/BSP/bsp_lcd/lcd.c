@@ -1289,36 +1289,51 @@ void lcd_show_string(uint16_t x, uint16_t y, uint16_t width, uint16_t height, ui
 
 static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t size, uint16_t color, uint16_t back_color);
 
-/**
- * @brief       显示汉字字符串（使用font文件夹中的字体）
- * @param       x,y         : 起始坐标
- * @param       str         : 汉字字符串
- * @param       color       : 字体颜色
- * @param       back_color  : 背景颜色
- * @param       font        : 字体结构体指针
- * @retval      无
- */
-void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font)
-{
-    uint16_t x0 = x;
+// /**
+//  * @brief       显示汉字字符串（使用font文件夹中的字体）
+//  * @param       x,y         : 起始坐标
+//  * @param       str         : 汉字字符串
+//  * @param       color       : 字体颜色
+//  * @param       back_color  : 背景颜色
+//  * @param       font        : 字体结构体指针
+//  * @retval      无
+//  */
+// void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font)
+// {
+//     uint16_t x0 = x;
+//     uint8_t found;
+//     const uint8_t *name_bytes;
     
-    while (*str != 0) 
-    {
-        const font_chinese_t *cn = font->chinese;
-        while (cn != NULL && cn->name != NULL)
-        {
-            if (strncmp(cn->name, (const char *)str, 3) == 0)
-            {
-                lcd_draw_cn_custom(x, y, cn->model, font->size, color, back_color);
-                x += font->size;
-                if (x > lcddev.width - font->size) { x = x0; y += font->size; }
-                break;
-            }
-            cn++;
-        }
-        str += 3; // UTF-8 下一个汉字
-    }
-}
+//     while (*str != 0) 
+//     {
+//         found = 0;
+//         const font_chinese_t *cn = font->chinese;
+//         while (cn != NULL && cn->name != NULL)
+//         {
+//             // 将 name 转换为 uint8_t 指针进行逐字节比较
+//             name_bytes = (const uint8_t *)cn->name;
+//             if (name_bytes[0] == str[0] && 
+//                 name_bytes[1] == str[1] && 
+//                 name_bytes[2] == str[2])
+//             {
+//                 lcd_draw_cn_custom(x, y, cn->model, font->size, color, back_color);
+//                 x += font->size;
+//                 if (x > lcddev.width - font->size) { x = x0; y += font->size; }
+//                 found = 1;
+//                 break;
+//             }
+//             cn++;
+//         }
+//         if (!found)
+//         {
+//             // 字符未找到，绘制空白区域并前进
+//             lcd_fill(x, y, x + font->size - 1, y + font->size - 1, back_color);
+//             x += font->size;
+//             if (x > lcddev.width - font->size) { x = x0; y += font->size; }
+//         }
+//         str += 3; // UTF-8 下一个汉字
+//     }
+// }
 
 /**
  * @brief       在LCD上显示图片
@@ -1363,9 +1378,8 @@ void lcd_show_picture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, c
 
 static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data, uint16_t size, uint16_t color, uint16_t back_color)
 {
-    uint8_t i, j, k;
+    uint8_t i, j;
     uint8_t temp;
-    uint16_t x0 = x;
     uint16_t bytes_per_line = (size + 7) / 8;
     
     for (i = 0; i < size; i++)
@@ -1373,7 +1387,7 @@ static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data,
         for (j = 0; j < size; j++)
         {
             temp = font_data[i * bytes_per_line + j / 8];
-            if (temp & (0x80 >> (j % 8)))
+            if (temp & (0x01 << (7 - (j % 8))))
             {
                 lcd_draw_point(x + j, y + i, color);
             }
@@ -1384,3 +1398,167 @@ static void lcd_draw_cn_custom(uint16_t x, uint16_t y, const uint8_t *font_data,
         }
     }
 }
+
+// 在 lcd.c 中添加此函数
+// 利用 FSMC 开窗特性快速绘制汉字字模
+static void lcd_draw_cn_fast(uint16_t x, uint16_t y, const uint8_t *model, uint16_t size, uint16_t color, uint16_t back_color)
+{
+    uint16_t i, j;
+    uint8_t temp;
+    uint16_t bytes_per_line = (size + 7) / 8; // 每行需要的字节数
+
+    // 1. 设置显示窗口 (x, y) 到 (x+size-1, y+size-1)
+    lcd_set_window(x, y, size, size);
+    
+    // 2. 准备写入 GRAM
+    lcd_write_ram_prepare();
+
+    // 3. 循环发送颜色数据
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            // 获取当前行的字节数据
+            // model 索引方式：行号 * 每行字节数 + 当前列所在的字节偏移
+            temp = model[i * bytes_per_line + j / 8];
+            
+            // 判断当前位是否为 1 (显示字体颜色)
+            if (temp & (0x80 >> (j % 8))) 
+            {
+                LCD->LCD_RAM = color;
+            }
+            else
+            {
+                LCD->LCD_RAM = back_color;
+            }
+        }
+    }
+}
+
+/**
+ * @brief       显示汉字字符串 (适配 GBK/GB2312 编码 + FSMC加速)
+ * @param       x,y         : 起始坐标
+ * @param       str         : 汉字字符串 (如 "梅花嵌入式")
+ * @param       color       : 字体颜色
+ * @param       back_color  : 背景颜色
+ * @param       font        : 字体结构体指针
+ */
+void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font)
+{
+    uint16_t x0 = x;
+    uint8_t found;
+    const uint8_t *name_bytes;
+    
+    // 保护性检查
+    if (str == NULL || font == NULL) return;
+
+    while (*str != 0) 
+    {
+        found = 0;
+        const font_chinese_t *cn = font->chinese;
+        
+        while (cn != NULL && cn->name != NULL)
+        {
+            name_bytes = (const uint8_t *)cn->name;
+            
+            // 【关键修改】GBK 只需要比较 2 个字节
+            if (name_bytes[0] == str[0] && name_bytes[1] == str[1])
+            {
+                // 调用 FSMC 加速绘图函数
+                lcd_draw_cn_fast(x, y, cn->model, font->size, color, back_color);
+                
+                x += font->size;
+                // 自动换行
+                if (x > lcddev.width - font->size) 
+                { 
+                    x = x0; 
+                    y += font->size; 
+                }
+                
+                found = 1;
+                break;
+            }
+            cn++;
+        }
+
+        // 没找到字库，填充背景色块
+        if (!found)
+        {
+            lcd_fill(x, y, x + font->size - 1, y + font->size - 1, back_color);
+            x += font->size;
+            if (x > lcddev.width - font->size) 
+            { 
+                x = x0; 
+                y += font->size; 
+            }
+        }
+
+        // 【关键修改】GBK 编码下，指针后移 2 位
+        str += 2; 
+    }
+}
+
+/**
+ * @brief       显示中英文混合字符串 (自动识别 GBK 中文 和 ASCII 英文)
+ * @param       x,y         : 起始坐标
+ * @param       str         : 字符串
+ * @param       color       : 字体颜色
+ * @param       back_color  : 背景颜色
+ * @param       font        : 字体结构体
+ */
+void lcd_show_mix_string(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font)
+{
+    uint16_t x0 = x;
+    
+    while (*str != 0)
+    {
+        // 自动换行检查
+        if (x > lcddev.width - font->size)
+        {
+            x = x0;
+            y += font->size;
+        }
+
+        // 判断是否为汉字 (GBK首字节 >= 0x81)
+        if (*str >= 0x81)
+        {
+            // --- 处理汉字 (2字节) ---
+            uint8_t found = 0;
+            const font_chinese_t *cn = font->chinese;
+            
+            while (cn != NULL && cn->name != NULL)
+            {
+                const uint8_t *name_bytes = (const uint8_t *)cn->name;
+                if (name_bytes[0] == str[0] && name_bytes[1] == str[1])
+                {
+                    lcd_draw_cn_fast(x, y, cn->model, font->size, color, back_color);
+                    found = 1;
+                    break;
+                }
+                cn++;
+            }
+            
+            if (!found) 
+            {
+                lcd_fill(x, y, x + font->size - 1, y + font->size - 1, back_color);
+            }
+
+            x += font->size; 
+            str += 2; // 汉字偏移2字节
+        }
+        else
+        {
+            // --- 处理 ASCII (1字节) ---
+            // 直接调用 lcd.c 中已有的 lcd_show_char
+            // 注意：lcd_show_char 内部用的字库和你的 font_t 可能不一致
+            // 如果你想用 font_t 里的 ascii_model，需要像下面这样写：
+            
+            /* 方案A：直接用 lcd.c 自带的简单字符显示 (简单，但字体可能和中文不搭) */
+            lcd_show_char(x, y, *str, font->size, 0, color); // mode=0 非叠加
+            
+            x += font->size / 2; // 英文宽度一般是高度的一半
+            str++;               // 英文偏移1字节
+        }
+    }
+}
+
