@@ -1,7 +1,7 @@
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
-#include "rtc.h"
+#include "bsp_rtc.h"
 
 void welcome_page_display(void);
 void error_page_display(const char *msg);

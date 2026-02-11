@@ -3,37 +3,38 @@
 #include "lcd.h"
 #include "lcdfont.h"
 #include "imag.h"
+#include "font.h"
 
 void error_page_display(const char *msg)
 {
-    /* 1. è®¾ç½®èƒŒæ™¯è‰² */
-    // è®¾ç½®å…¨å±€èƒŒæ™¯è‰²å˜é‡ï¼Œç¡®ä¿æ–‡å­—æ˜¾ç¤ºçš„èƒŒæ™¯æ˜¯é»‘è‰²çš„ï¼ˆå› ä¸º lcd_show_string æ¨¡å¼0ä¾èµ–æ­¤å˜é‡ï¼‰
+    /* 1. ÉèÖÃ±³¾°É« */
+    // ÉèÖÃÈ«¾Ö±³¾°É«±äÁ¿£¬È·±£ÎÄ×ÖÏÔÊ¾µÄ±³¾°ÊÇºÚÉ«µÄ£¨ÒòÎª lcd_show_string Ä£Ê½0ÒÀÀµ´Ë±äÁ¿£©
     g_back_color = BLACK; 
     
-    // æ¸…å±ä¸ºé»‘è‰²
-    // å¯¹åº”åŸä»£ç : st7789_fill_color(0, 0, ST7789_WIDTH - 1, ST7789_HEIGHT - 1, color_bg);
+    // ÇåÆÁÎªºÚÉ«
+    // ¶ÔÓ¦Ô­´úÂë: st7789_fill_color(0, 0, ST7789_WIDTH - 1, ST7789_HEIGHT - 1, color_bg);
     lcd_clear(BLACK);
 
-    /* 2. æ˜¾ç¤ºå›¾ç‰‡ */
-    // å¯¹åº”åŸä»£ç : st7789_draw_image(40, 37, &img_error);
-    // æ³¨æ„ï¼šlcd_show_picture éœ€è¦å…·ä½“çš„ å®½(width) å’Œ é«˜(height) ä»¥åŠ æ•°æ®æŒ‡é’ˆ
-    // ä½ éœ€è¦æŸ¥çœ‹ imag.h ä¸­ img_error æ˜¯æ€ä¹ˆå®šä¹‰çš„ã€‚
+    /* 2. ÏÔÊ¾Í¼Æ¬ */
+    // ¶ÔÓ¦Ô­´úÂë: st7789_draw_image(40, 37, &img_error);
+    // ×¢Òâ£ºlcd_show_picture ĞèÒª¾ßÌåµÄ ¿í(width) ºÍ ¸ß(height) ÒÔ¼° Êı¾İÖ¸Õë
+    // ÄãĞèÒª²é¿´ imag.h ÖĞ img_error ÊÇÔõÃ´¶¨ÒåµÄ¡£
     
-    // æƒ…å†µAï¼šå¦‚æœ img_error æ˜¯ä¸€ä¸ªç»“æ„ä½“ (åŒ…å« .w, .h, .data)
-    lcd_show_picture(40, 37, img_error.w, img_error.h, img_error.data);
+    // Çé¿öA£ºÈç¹û img_error ÊÇÒ»¸ö½á¹¹Ìå (°üº¬ .width, .height, .data)
+    lcd_show_picture(40, 37, img_error.width, img_error.height, img_error.data);
     
-    // æƒ…å†µBï¼šå¦‚æœ img_error åªæ˜¯ä¸€ä¸ªçº¯å›¾åƒæ•°ç»„ï¼Œä½ éœ€è¦æ‰‹åŠ¨å¡«å…¥å®ƒçš„å®½å’Œé«˜
-    // å‡è®¾å›¾ç‰‡å®½é«˜æ˜¯ 100x100 (è¯·æ ¹æ®å®é™…å›¾ç‰‡ä¿®æ”¹!)
+    // Çé¿öB£ºÈç¹û img_error Ö»ÊÇÒ»¸ö´¿Í¼ÏñÊı×é£¬ÄãĞèÒªÊÖ¶¯ÌîÈëËüµÄ¿íºÍ¸ß
+    // ¼ÙÉèÍ¼Æ¬¿í¸ßÊÇ 100x100 (Çë¸ù¾İÊµ¼ÊÍ¼Æ¬ĞŞ¸Ä!)
     //lcd_show_picture(40, 37, 100, 100, (const uint8_t *)&img_error); 
     
-    /* 3. è®¡ç®—å±…ä¸­æ˜¾ç¤ºçš„åæ ‡ */
-    // åŸä»£ç ç”¨ font20 (20å·å­—ä½“)ï¼Œè¿™é‡Œé€‰ç”¨é©±åŠ¨æ”¯æŒçš„ 24 å·å­—ä½“ï¼Œæ˜¾ç¤ºæ›´æ¸…æ™°
+    /* 3. ¼ÆËã¾ÓÖĞÏÔÊ¾µÄ×ø±ê */
+    // Ô­´úÂëÓÃ font20 (20ºÅ×ÖÌå)£¬ÕâÀïÑ¡ÓÃÇı¶¯Ö§³ÖµÄ 24 ºÅ×ÖÌå£¬ÏÔÊ¾¸üÇåÎú
     uint8_t font_size = 24; 
     
-    // åœ¨æ ‡å‡† ASCII å­—ä½“ä¸­ï¼Œå­—ç¬¦å®½åº¦é€šå¸¸æ˜¯é«˜åº¦çš„ä¸€åŠ (24 / 2 = 12åƒç´ )
-    // ä½ çš„é©±åŠ¨ lcd_show_char ä¸­ä¹Ÿæ˜¯è¿™æ ·è®¡ç®—çš„: (size / 2)
+    // ÔÚ±ê×¼ ASCII ×ÖÌåÖĞ£¬×Ö·û¿í¶ÈÍ¨³£ÊÇ¸ß¶ÈµÄÒ»°ë (24 / 2 = 12ÏñËØ)
+    // ÄãµÄÇı¶¯ lcd_show_char ÖĞÒ²ÊÇÕâÑù¼ÆËãµÄ: (size / 2)
     int char_width = font_size / 2;
-    int str_len_px = strlen(msg) * char_width; // å­—ç¬¦ä¸²æ€»åƒç´ é•¿åº¦
+    int str_len_px = strlen(msg) * char_width; // ×Ö·û´®×ÜÏñËØ³¤¶È
     
     uint16_t startx = 0;
     if (str_len_px < lcddev.width)
@@ -41,11 +42,11 @@ void error_page_display(const char *msg)
         startx = (lcddev.width - str_len_px) / 2;
     }
 
-    /* 4. æ˜¾ç¤ºå­—ç¬¦ä¸² */
-    // å¯¹åº”åŸä»£ç : st7789_write_string(..., mkcolor(255, 255, 0), ...);
-    // 255,255,0 å¯¹åº” RGB565 çš„ YELLOW
-    // å‚æ•°: x, y, width, height, size, string, color
-    // width è®¾ç½®ä¸º lcddev.width ç¡®ä¿æœ‰è¶³å¤Ÿç©ºé—´æ˜¾ç¤º
+    /* 4. ÏÔÊ¾×Ö·û´® */
+    // ¶ÔÓ¦Ô­´úÂë: st7789_write_string(..., mkcolor(255, 255, 0), ...);
+    // 255,255,0 ¶ÔÓ¦ RGB565 µÄ YELLOW
+    // ²ÎÊı: x, y, width, height, size, string, color
+    // width ÉèÖÃÎª lcddev.width È·±£ÓĞ×ã¹»¿Õ¼äÏÔÊ¾
     lcd_show_string(startx, 245, lcddev.width, font_size, font_size, (char *)msg, YELLOW);
 }
 

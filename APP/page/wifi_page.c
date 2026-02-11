@@ -1,9 +1,18 @@
+/*
+ * @Author: langhz666 3204498297@qq.com
+ * @Date: 2026-02-11 16:24:31
+ * @LastEditors: langhz666 3204498297@qq.com
+ * @LastEditTime: 2026-02-11 16:59:35
+ * @FilePath: \luoji\APP\page\wifi_page.c
+ * @Description: ??????,???`customMade`, ??koroFileHeader???? ????: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include <stdint.h>
 #include <string.h>
 #include "lcd.h"
 #include "lcdfont.h"
 #include "imag.h"
 #include "app.h"
+#include "font.h"
 
 // 1. ???? (RGB888 -> RGB565)
 // 0, 255, 234 (??) -> 0x07FD

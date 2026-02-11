@@ -33,6 +33,9 @@
 #include "lcd.h"
 #include "weather.h"
 #include "bsp_espat.h"
+#include "page.h"
+#include "app.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,7 +56,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,13 +104,20 @@ int main(void)
   MX_USART2_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
-
+  lcd_init();
+  welcome_page_display();
+  wifi_init();
+  wifi_page_display();
+  wifi_wait_connect();
+  main_loop_init();
+  main_page_display();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+  main_loop();  
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

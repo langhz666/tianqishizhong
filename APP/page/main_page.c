@@ -1,12 +1,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include "rtc.h"
+#include "bsp_rtc.h"
 #include "lcd.h"
 #include "lcdfont.h"
 #include "imag.h"
 #include "page.h"
 #include "app.h"
+#include "font.h"
 
 // 颜色转换 (RGB888 -> RGB565)
 // 如果你没有 mkcolor 宏，可以使用以下公式或在线工具转换
@@ -108,7 +109,7 @@ void main_page_redraw_time(rtc_date_time_t *time)
 
 void main_page_redraw_date(rtc_date_time_t *date)
 {
-    char str_date[12];
+    char str_date[16];
     char *week_str;
     
     snprintf(str_date, sizeof(str_date), "%04u/%02u/%02u", date->year, date->month, date->day);

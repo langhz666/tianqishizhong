@@ -2,6 +2,7 @@
 #include <string.h>
 #include "lcd.h"
 #include "lcdfont.h"
+#include "font.h"
 #include "imag.h"
 
 // 1. ÑÕÉ«¶¨Òå (RGB888 -> RGB565)

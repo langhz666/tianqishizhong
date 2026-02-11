@@ -7,6 +7,7 @@
 #include "bsp_rtc.h"    // 替换 rtc.h
 #include "bsp_espat.h"  // 替换 esp_at.h
 #include "bsp_dht11.h"   // 替换 dht11.h
+
 #include "weather.h"
 #include "lcd.h"        // 引入 LCD 以便重绘
 #include "page.h"
@@ -165,30 +166,18 @@ static void time_update(void)
 
 static void inner_update(void)
 {
-    static float last_temperature, last_humidity;
+    static uint8_t last_temperature, last_humidity;
     
     if (HAL_GetTick() - last_inner_update_tick < INNER_UPDATE_INTERVAL)
         return;
     
     last_inner_update_tick = HAL_GetTick();
     
-    if (!aht20_start_measurement())
-    {
-        printf("[AHT20] start measurement failed\n");
-        return;
-    }
+    uint8_t temperature = 0, humidity = 0;
     
-    if (!aht20_wait_for_measurement())
+    if (dht11_read_data(&temperature, &humidity) != 0)
     {
-        printf("[AHT20] wait for measurement failed\n");
-        return;
-    }
-    
-    float temperature = 0.0f, humidity = 0.0f;
-    
-    if (!aht20_read_measurement(&temperature, &humidity))
-    {
-        printf("[AHT20] read measurement failed\n");
+        printf("[DHT11] read data failed\n");
         return;
     }
     
@@ -200,9 +189,9 @@ static void inner_update(void)
     last_temperature = temperature;
     last_humidity = humidity;
     
-    printf("[AHT20] Temperature: %.1f, Humidity: %.1f\n", temperature, humidity);
-    main_page_redraw_inner_temperature(temperature);
-    main_page_redraw_inner_humidity(humidity);
+    printf("[DHT11] Temperature: %d, Humidity: %d\n", temperature, humidity);
+    main_page_redraw_inner_temperature((float)temperature);
+    main_page_redraw_inner_humidity((float)humidity);
 }
 
 static void outdoor_update(void)
@@ -216,7 +205,7 @@ static void outdoor_update(void)
     
     weather_info_t weather = { 0 };
     // 注意：这里的 URL 是示例，请确保你的 API Key 是最新的
-    const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SfRic8Wmp-Qh3OeFk&location=WTEMH46Z5N09&language=en&unit=c";
+    const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
     
     const char *weather_http_response = esp_at_http_get(weather_url);
     if (weather_http_response == NULL)
@@ -237,7 +226,7 @@ static void outdoor_update(void)
     }
     
     memcpy(&last_weather, &weather, sizeof(weather_info_t));
-    printf("[WEATHER] %s, %s, %.1f\n", weather.city, weather.weather, weather.temperature);
+    printf("[WEATHER] %s, %s, %d\n", weather.city, weather.weather, weather.temperature);
     
     main_page_redraw_outdoor_temperature(weather.temperature);
     main_page_redraw_outdoor_weather_icon(weather.weather_code);
