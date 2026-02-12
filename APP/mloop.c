@@ -42,8 +42,29 @@ void main_loop_init(void)
 {
     main_page_display();
     
-    // 使用 HAL_GetTick 不需要注册回调
-    // 这里只需初始化时间戳，确保上电后任务能立即运行一次
+    // 【新增 1】移植丢失的初始化逻辑
+    printf("[SYS] ESP Init...\n");
+    if (!esp_at_init()) {
+        printf("[ERR] ESP Init failed\n");
+    }
+
+    // 【新增 2】移植丢失的连接 WiFi 逻辑
+    // 注意：这里的 SSID 和密码根据你的实际情况填写，或者做成宏定义
+    printf("[SYS] Connecting WiFi...\n");
+    main_page_redraw_wifi_ssid("Connecting..."); // 可以在屏幕提示正在连接
+    
+    if (esp_at_connect_wifi("iQOO Neo8 Pro", "lhz19719937532", NULL)) {
+        printf("[SYS] WiFi Connected\n");
+        main_page_redraw_wifi_ssid("Connected");
+    } else {
+        printf("[ERR] WiFi Connect failed\n");
+        main_page_redraw_wifi_ssid("Connect Fail");
+    }
+
+    // 【新增 3】SNTP 初始化
+    esp_at_sntp_init();
+
+    // 初始化时间戳
     last_time_sync_tick = 0;
     last_wifi_update_tick = 0;
     last_time_update_tick = 0;
@@ -184,17 +205,18 @@ static void inner_update(void)
     
     if (dht11_read_data(&temperature, &humidity) != 0)
     {
+        printf("[DHT11] read data failed\n");
         return;
     }
-    
+
     if (temperature == last_temperature && humidity == last_humidity)
     {
         return;
     }
-    
+
     last_temperature = temperature;
     last_humidity = humidity;
-    
+
     main_page_redraw_inner_temperature((float)temperature);
     main_page_redraw_inner_humidity((float)humidity);
 }
@@ -206,14 +228,21 @@ static void outdoor_update(void)
     if (HAL_GetTick() - last_outdoor_update_tick < OUTDOOR_UPDATE_INTERVAL)
         return;
     
+    // 检查 WiFi 是否连接，没连接就别请求了，省得卡住
+    if (!wifi_is_connected()) { 
+        return; 
+    }
+
     last_outdoor_update_tick = HAL_GetTick();
     
     weather_info_t weather = { 0 };
-    // 注意：这里的 URL 是示例，请确保你的 API Key 是最新的
-    const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=zh&unit=c";
+    
+    // 【优化 1】改为 http，提高成功率
+    static const char *weather_url = "http://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
 
     printf("[WEATHER] requesting weather data...\n");
     const char *weather_http_response = esp_at_http_get(weather_url);
+    
     if (weather_http_response == NULL)
     {
         printf("[WEATHER] http error - no response\n");
@@ -221,7 +250,16 @@ static void outdoor_update(void)
     }
 
     printf("[WEATHER] response received, parsing...\n");
-    if (!parse_seniverse_response(weather_http_response, &weather))
+    
+    // 【优化 2】跳过 AT 指令头，寻找 JSON 起始点 '{'
+    const char *json_start = strchr(weather_http_response, '{');
+    if (json_start == NULL) {
+        printf("[WEATHER] invalid response (no json)\n");
+        return;
+    }
+
+    // 传入 json_start 而不是原始 response
+    if (!parse_seniverse_response(json_start, &weather))
     {
         printf("[WEATHER] parse failed\n");
         return;
