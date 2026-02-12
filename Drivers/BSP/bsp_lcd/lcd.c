@@ -1114,6 +1114,9 @@ void lcd_show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint8_t mo
         case 32:
             pfont = (uint8_t *)asc2_3216[chr];  /* 调用3216字体 */
             break;
+        case 48:
+            pfont = (uint8_t *)asc2_4824[chr];  /* 调用4824字体 */
+            break;
 
         case 54:
             pfont = (uint8_t *)asc2_5427[chr];  /* 调用5427字体 */

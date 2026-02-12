@@ -28,7 +28,7 @@ void main_page_display(void)
     lcd_show_picture(23, 20, icon_wifi.width, icon_wifi.height, icon_wifi.data);
     main_page_redraw_wifi_ssid(WIFI_SSID);
     g_back_color = COLOR_BG_TIME; 
-    lcd_show_string(25, 42, 200, 76, 76, "--:--", BLACK);
+    lcd_show_string(25, 60, 200, 48, 48, "--:--:--", BLACK);
     lcd_show_string(35, 121, 200, 20, 20, "----/--/--", BLACK); 
     lcd_show_chinese(160, 125, (uint8_t *)"ÐÇÆÚÈý", BLACK, COLOR_BG_TIME, &font20_maple_bold);
 
@@ -56,11 +56,10 @@ void main_page_redraw_wifi_ssid(const char *ssid)
 
 void main_page_redraw_time(rtc_date_time_t *time)
 {
-    char str[9];
-    char comma = (time->second % 2 == 0) ? ':' : ' ';
-    snprintf(str, sizeof(str), "%02u%c%02u", time->hour, comma, time->minute);
+    char str[16];
+    snprintf(str, sizeof(str), "%02u:%02u:%02u", time->hour, time->minute, time->second);
     g_back_color = COLOR_BG_TIME;
-    lcd_show_string(25, 42, 200, 76, 76, str, BLACK);
+    lcd_show_string(25, 60, 200, 48, 48, str, BLACK);
 }
 
 void main_page_redraw_date(rtc_date_time_t *date)

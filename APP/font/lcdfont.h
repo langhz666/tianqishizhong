@@ -71,6 +71,7 @@ extern const uint8_t asc2_1608[95][16];
 extern const uint8_t asc2_2010[95][30];
 extern const uint8_t asc2_2412[95][36];
 extern const uint8_t asc2_3216[95][64];
+extern const uint8_t asc2_4824[95][144];
 extern const uint8_t asc2_5427[95][189];
 extern const uint8_t asc2_6432[95][256];
 extern const uint8_t asc2_7638[95][380];
