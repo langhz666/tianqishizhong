@@ -23,6 +23,7 @@ extern const image_t icon_yueliang;
 extern const image_t icon_zhongxue;
 extern const image_t icon_zhongyu;
 extern const image_t icon_na;
+extern const image_t img_chengpingan;
 
 // extern const unsigned char gImage_imag_kkedg[]; // 声明数组
 // extern const unsigned char gImage_imag_test[]; // 声明数组

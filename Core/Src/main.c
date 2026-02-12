@@ -107,7 +107,6 @@ int main(void)
   DWT_Delay_Init();
   dht11_init();
   lcd_init();
-
   welcome_page_display();
 
   wifi_init();
