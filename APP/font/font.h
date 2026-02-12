@@ -1,7 +1,6 @@
 #ifndef __FONT_H
 #define __FONT_H
 
-// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 
 #include <stdint.h>
 

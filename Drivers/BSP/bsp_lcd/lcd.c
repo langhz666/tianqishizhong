@@ -1084,9 +1084,10 @@ void lcd_fill_circle(uint16_t x, uint16_t y, uint16_t r, uint16_t color)
  */
 void lcd_show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint8_t mode, uint16_t color)
 {
-    uint8_t temp, t1, t;
+    uint8_t temp, t1;
+    uint16_t t;
     uint16_t y0 = y;
-    uint8_t csize = 0;
+    uint16_t csize = 0;
     uint8_t *pfont = 0;
 
     csize = (size / 8 + ((size % 8) ? 1 : 0)) * (size / 2); /* 得到字体一个字符对应点阵集所占的字节数 */
@@ -1109,6 +1110,10 @@ void lcd_show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint8_t mo
         case 32:
             pfont = (uint8_t *)asc2_3216[chr];  /* 调用3216字体 */
             break;
+            // 【修改点3】新增 76 号字体分支
+        // case 76:
+        //     pfont = (uint8_t *)asc2_7638[chr]; /* 需要提前声明这个数组 */
+        //     break;
 
         default:
             return ;
@@ -1548,12 +1553,6 @@ void lcd_show_mix_string(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, u
         }
         else
         {
-            // --- 处理 ASCII (1字节) ---
-            // 直接调用 lcd.c 中已有的 lcd_show_char
-            // 注意：lcd_show_char 内部用的字库和你的 font_t 可能不一致
-            // 如果你想用 font_t 里的 ascii_model，需要像下面这样写：
-            
-            /* 方案A：直接用 lcd.c 自带的简单字符显示 (简单，但字体可能和中文不搭) */
             lcd_show_char(x, y, *str, font->size, 0, color); // mode=0 非叠加
             
             x += font->size / 2; // 英文宽度一般是高度的一半

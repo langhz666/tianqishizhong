@@ -140,6 +140,7 @@ typedef struct
 
 // 函数声明
 void lcd_show_chinese(uint16_t x, uint16_t y, uint8_t *s, uint16_t color, uint16_t back_color, const font_t *font);
+void lcd_show_mix_string(uint16_t x, uint16_t y, uint8_t *str, uint16_t color, uint16_t back_color, const font_t *font);
 void lcd_show_picture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pic);
 
 /* LCD_BASE的详细解算方法:

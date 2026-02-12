@@ -27,8 +27,10 @@ void main_page_display(void)
     lcd_show_picture(23, 20, icon_wifi.width, icon_wifi.height, icon_wifi.data);
     main_page_redraw_wifi_ssid(WIFI_SSID);
     g_back_color = COLOR_BG_TIME; 
-    lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
-    lcd_show_string(35, 121, 200, 24, 24, "----/--/--", GRAY); 
+    // lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
+    // lcd_show_string(35, 121, 200, 24, 24, "----/--/--", BLACK); 
+    lcd_show_mix_string(25, 42, "--:--", BLACK, COLOR_BG_TIME, &font76_maple_extrabold);
+    lcd_show_mix_string(35, 121, "----/--/-- 星期四", BLACK, COLOR_BG_TIME, &font20_maple_bold);
 
     lcd_fill(15, 165, 114, 304, COLOR_BG_INNER);
     g_back_color = COLOR_BG_INNER;
@@ -63,7 +65,8 @@ void main_page_redraw_time(rtc_date_time_t *time)
     g_back_color = COLOR_BG_TIME;
     // 原代码 76 号字体，改为 32 号 (驱动限制)
     // 如果需要更大字体，需要扩展 lcd.c 中的 show_char 函数
-    lcd_show_string(25, 42, 200, 32, 32, str, BLACK);
+    // lcd_show_string(25, 42, 200, 32, 32, str, BLACK);
+    lcd_show_mix_string(35, 121, (uint8_t *)str, BLACK, COLOR_BG_TIME, &font76_maple_extrabold);
 }
 
 void main_page_redraw_date(rtc_date_time_t *date)
