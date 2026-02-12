@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include "main.h"
 #include "bsp_rtc.h"
 #include "lcd.h"
 #include "lcdfont.h"
@@ -25,23 +26,22 @@ void main_page_display(void)
     lcd_fill(15, 15, 224, 154, COLOR_BG_TIME);
     lcd_show_picture(23, 20, icon_wifi.width, icon_wifi.height, icon_wifi.data);
     main_page_redraw_wifi_ssid(WIFI_SSID);
-    g_back_color = COLOR_BG_TIME; // 设置文字背景色
+    g_back_color = COLOR_BG_TIME; 
     lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
-    lcd_show_string(35, 121, 200, 24, 24, "----/--/--", GRAY); // 星期几是中文，需要单独处理或扩展字库
+    lcd_show_string(35, 121, 200, 24, 24, "----/--/--", GRAY); 
+
     lcd_fill(15, 165, 114, 304, COLOR_BG_INNER);
     g_back_color = COLOR_BG_INNER;
     lcd_show_chinese(19, 170, (uint8_t *)"室内环境", BLACK, COLOR_BG_INNER, &font24_maple_bold);
     lcd_show_string(86, 191, 20, 32, 32, "C", BLACK);
     lcd_show_string(91, 262, 20, 32, 32, "%", BLACK);
-    main_page_redraw_inner_temperature(99.9f); // 初始值
-    main_page_redraw_inner_humidity(99.9f);    // 初始值
-    // 4. 室外环境区域 (右下橙色区域)
-    lcd_fill(125, 165, 224, 304, COLOR_BG_OUTDOOR);
+    main_page_redraw_inner_temperature(99.9f); 
+    main_page_redraw_inner_humidity(99.9f);    
+    lcd_fill(115, 165, 224, 304, COLOR_BG_OUTDOOR);
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
-    // 温度计图标
     lcd_show_picture(139, 239, icon_wenduji.width, icon_wenduji.height, icon_wenduji.data);
-    main_page_redraw_outdoor_city("合肥"); // 假设 city 是纯汉字，需特殊处理
+    main_page_redraw_outdoor_city("衡阳"); 
     main_page_redraw_outdoor_temperature(99.9f);
     main_page_redraw_outdoor_weather_icon(-1);
 }

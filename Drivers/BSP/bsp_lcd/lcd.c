@@ -849,17 +849,17 @@ void lcd_clear(uint16_t color)
 void lcd_fill(uint16_t sx, uint16_t sy, uint16_t ex, uint16_t ey, uint32_t color)
 {
     uint16_t i, j;
-    uint16_t xlen = 0;
-    xlen = ex - sx + 1;
+    uint16_t width = ex - sx + 1;
+    uint16_t height = ey - sy + 1;
 
-    for (i = sy; i <= ey; i++)
+    lcd_set_window(sx, sy, width, height);
+    lcd_write_ram_prepare();
+
+    for (i = 0; i < height; i++)
     {
-        lcd_set_cursor(sx, i);      /* 设置光标位置 */
-        lcd_write_ram_prepare();    /* 开始写入GRAM */
-
-        for (j = 0; j < xlen; j++)
+        for (j = 0; j < width; j++)
         {
-            LCD->LCD_RAM = color;   /* 显示颜色 */
+            LCD->LCD_RAM = color;
         }
     }
 }
