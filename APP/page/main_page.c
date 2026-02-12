@@ -29,7 +29,7 @@ void main_page_display(void)
     g_back_color = COLOR_BG_TIME; 
     lcd_show_string(25, 42, 200, 76, 76, "--:--", BLACK);
     lcd_show_string(35, 121, 200, 20, 20, "----/--/--", BLACK); 
-    lcd_show_chinese(140, 121, (uint8_t *)"星期四", BLACK, COLOR_BG_TIME, &font20_maple_bold);
+    lcd_show_chinese(160, 125, (uint8_t *)"星期三", BLACK, COLOR_BG_TIME, &font20_maple_bold);
 
     lcd_fill(15, 165, 114, 304, COLOR_BG_INNER);
     g_back_color = COLOR_BG_INNER;
@@ -66,9 +66,11 @@ void main_page_redraw_date(rtc_date_time_t *date)
 {
     char str_date[16];
     char *week_str;
-    
+
+    printf("[LCD] redraw date: %04u/%02u/%02u, weekday: %d\n", date->year, date->month, date->day, date->weekday);
+
     snprintf(str_date, sizeof(str_date), "%04u/%02u/%02u", date->year, date->month, date->day);
-    
+
     switch(date->weekday) {
         case 1: week_str = "一"; break;
         case 2: week_str = "二"; break;
@@ -76,14 +78,15 @@ void main_page_redraw_date(rtc_date_time_t *date)
         case 4: week_str = "四"; break;
         case 5: week_str = "五"; break;
         case 6: week_str = "六"; break;
-        case 7: week_str = "日"; break; // 注意原代码是"天"
+        case 7: week_str = "日"; break;
         default: week_str = "X"; break;
     }
 
+    printf("[LCD] week_str: %s\n", week_str);
     g_back_color = COLOR_BG_TIME;
     lcd_show_string(35, 121, 120, 24, 24, str_date, GRAY);
-    lcd_show_chinese(35 + 120, 121, (uint8_t *)"星期", GRAY, COLOR_BG_TIME, &font24_maple_bold);
-    lcd_show_chinese(35 + 120 + 48, 121, (uint8_t *)week_str, GRAY, COLOR_BG_TIME, &font24_maple_bold);
+    lcd_show_chinese(160, 125, (uint8_t *)"星期", BLACK, COLOR_BG_TIME, &font20_maple_bold);
+    lcd_show_chinese(160 + 40, 125, (uint8_t *)week_str, BLACK, COLOR_BG_TIME, &font20_maple_bold);
 }
 
 void main_page_redraw_inner_temperature(float temperature)
@@ -124,6 +127,7 @@ void main_page_redraw_outdoor_city(const char *city)
 {
     char str[9];
     snprintf(str, sizeof(str), "%s", city);
+    printf("[LCD] redraw outdoor city: %s\n", city);
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_chinese(127, 170, (uint8_t *)str, BLACK, COLOR_BG_OUTDOOR, &font24_maple_bold);
 }
@@ -139,22 +143,53 @@ void main_page_redraw_outdoor_temperature(float temperature)
 
 void main_page_redraw_outdoor_weather_icon(const int code)
 {
-    const image_t *icon; 
+    const image_t *icon;
+    printf("[LCD] redraw weather icon, code: %d\n", code);
     if (code == 0 || code == 2 || code == 38)
+    {
         icon = &icon_qing;
+        printf("[LCD] using icon_qing (clear)\n");
+    }
     else if (code == 1 || code == 3)
+    {
         icon = &icon_yueliang;
+        printf("[LCD] using icon_yueliang (moon)\n");
+    }
     else if (code == 4 || code == 9)
+    {
         icon = &icon_yintian;
+        printf("[LCD] using icon_yintian (cloudy)\n");
+    }
     else if (code == 5 || code == 6 || code == 7 || code == 8)
+    {
         icon = &icon_duoyun;
+        printf("[LCD] using icon_duoyun (partly cloudy)\n");
+    }
     else if (code == 10 || code == 13 || code == 14 || code == 15 || code == 16 || code == 17 || code == 18 || code == 19)
+    {
         icon = &icon_zhongyu;
+        printf("[LCD] using icon_zhongyu (rain)\n");
+    }
     else if (code == 11 || code == 12)
+    {
         icon = &icon_leizhenyu;
+        printf("[LCD] using icon_leizhenyu (thunderstorm)\n");
+    }
     else if (code == 20 || code == 21 || code == 22 || code == 23 || code == 24 || code == 25)
+    {
         icon = &icon_zhongxue;
-    else 
+        printf("[LCD] using icon_zhongxue (snow)\n");
+    }
+    else if (code == 30)
+    {
+        icon = &icon_yintian;
+        printf("[LCD] using icon_yintian (foggy)\n");
+    }
+    else
+    {
         icon = &icon_na;
+        printf("[LCD] using icon_na (unknown)\n");
+    }
+    printf("[LCD] displaying icon at (166, 240), size: %dx%d\n", icon->width, icon->height);
     lcd_show_picture(166, 240, icon->width, icon->height, icon->data);
 }

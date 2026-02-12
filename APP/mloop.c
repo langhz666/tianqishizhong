@@ -214,15 +214,17 @@ static void outdoor_update(void)
     
     weather_info_t weather = { 0 };
     // 注意：这里的 URL 是示例，请确保你的 API Key 是最新的
-    const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
-    
+    const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=zh&unit=c";
+
+    printf("[WEATHER] requesting weather data...\n");
     const char *weather_http_response = esp_at_http_get(weather_url);
     if (weather_http_response == NULL)
     {
-        printf("[WEATHER] http error\n");
+        printf("[WEATHER] http error - no response\n");
         return;
     }
-    
+
+    printf("[WEATHER] response received, parsing...\n");
     if (!parse_seniverse_response(weather_http_response, &weather))
     {
         printf("[WEATHER] parse failed\n");
@@ -231,11 +233,13 @@ static void outdoor_update(void)
     
     if (memcmp(&last_weather, &weather, sizeof(weather_info_t)) == 0)
     {
+        printf("[WEATHER] data unchanged, skip update\n");
         return;
     }
     
     memcpy(&last_weather, &weather, sizeof(weather_info_t));
-    printf("[WEATHER] %s, %s, %d\n", weather.city, weather.weather, weather.temperature);
+    printf("[WEATHER] %s, %s, %d, code: %d\n", weather.city, weather.weather, weather.temperature, weather.weather_code);
+    printf("[WEATHER] calling redraw functions\n");
     
     main_page_redraw_outdoor_temperature(weather.temperature);
     main_page_redraw_outdoor_weather_icon(weather.weather_code);
