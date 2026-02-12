@@ -1103,6 +1103,10 @@ void lcd_show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint8_t mo
             pfont = (uint8_t *)asc2_1608[chr];  /* 调用1608字体 */
             break;
 
+        case 20:
+            pfont = (uint8_t *)asc2_2010[chr];  /* 调用2010字体 */
+            break;
+
         case 24:
             pfont = (uint8_t *)asc2_2412[chr];  /* 调用2412字体 */
             break;
@@ -1110,10 +1114,18 @@ void lcd_show_char(uint16_t x, uint16_t y, uint8_t chr, uint8_t size, uint8_t mo
         case 32:
             pfont = (uint8_t *)asc2_3216[chr];  /* 调用3216字体 */
             break;
-            // 【修改点3】新增 76 号字体分支
-        // case 76:
-        //     pfont = (uint8_t *)asc2_7638[chr]; /* 需要提前声明这个数组 */
-        //     break;
+
+        case 54:
+            pfont = (uint8_t *)asc2_5427[chr];  /* 调用5427字体 */
+            break;
+
+        case 64:
+            pfont = (uint8_t *)asc2_6432[chr];  /* 调用6432字体 */
+            break;
+
+        case 76:
+            pfont = (uint8_t *)asc2_7638[chr];  /* 调用7638字体 */
+            break;
 
         default:
             return ;

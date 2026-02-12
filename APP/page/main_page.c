@@ -27,18 +27,17 @@ void main_page_display(void)
     lcd_show_picture(23, 20, icon_wifi.width, icon_wifi.height, icon_wifi.data);
     main_page_redraw_wifi_ssid(WIFI_SSID);
     g_back_color = COLOR_BG_TIME; 
-    // lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
-    // lcd_show_string(35, 121, 200, 24, 24, "----/--/--", BLACK); 
-    lcd_show_mix_string(25, 42, "--:--", BLACK, COLOR_BG_TIME, &font76_maple_extrabold);
-    lcd_show_mix_string(35, 121, "----/--/-- 星期四", BLACK, COLOR_BG_TIME, &font20_maple_bold);
+    lcd_show_string(25, 42, 200, 76, 76, "--:--", BLACK);
+    lcd_show_string(35, 121, 200, 20, 20, "----/--/--", BLACK); 
+    lcd_show_chinese(140, 121, (uint8_t *)"星期四", BLACK, COLOR_BG_TIME, &font20_maple_bold);
 
     lcd_fill(15, 165, 114, 304, COLOR_BG_INNER);
     g_back_color = COLOR_BG_INNER;
     lcd_show_chinese(19, 170, (uint8_t *)"室内环境", BLACK, COLOR_BG_INNER, &font24_maple_bold);
     lcd_show_string(86, 191, 20, 32, 32, "C", BLACK);
     lcd_show_string(91, 262, 20, 32, 32, "%", BLACK);
-    main_page_redraw_inner_temperature(99.9f); 
-    main_page_redraw_inner_humidity(99.9f);    
+    main_page_redraw_inner_temperature(999.9f); 
+    main_page_redraw_inner_humidity(999.9f);    
     lcd_fill(125, 165, 224, 304, COLOR_BG_OUTDOOR);
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
@@ -51,22 +50,16 @@ void main_page_display(void)
 void main_page_redraw_wifi_ssid(const char *ssid)
 {
     g_back_color = COLOR_BG_TIME;
-    // 限制长度防止溢出
     lcd_show_string(50, 23, 160, 16, 16, (char *)ssid, GRAY);
 }
 
 void main_page_redraw_time(rtc_date_time_t *time)
 {
     char str[9];
-    // 模拟闪烁效果
     char comma = (time->second % 2 == 0) ? ':' : ' ';
     snprintf(str, sizeof(str), "%02u%c%02u", time->hour, comma, time->minute);
-    
     g_back_color = COLOR_BG_TIME;
-    // 原代码 76 号字体，改为 32 号 (驱动限制)
-    // 如果需要更大字体，需要扩展 lcd.c 中的 show_char 函数
-    // lcd_show_string(25, 42, 200, 32, 32, str, BLACK);
-    lcd_show_mix_string(35, 121, (uint8_t *)str, BLACK, COLOR_BG_TIME, &font76_maple_extrabold);
+    lcd_show_string(25, 42, 200, 76, 76, str, BLACK);
 }
 
 void main_page_redraw_date(rtc_date_time_t *date)
@@ -88,65 +81,49 @@ void main_page_redraw_date(rtc_date_time_t *date)
     }
 
     g_back_color = COLOR_BG_TIME;
-    // 显示日期部分 (英文/数字)
     lcd_show_string(35, 121, 120, 24, 24, str_date, GRAY);
-    
-    // 显示 "星期X" (中文)
     lcd_show_chinese(35 + 120, 121, (uint8_t *)"星期", GRAY, COLOR_BG_TIME, &font24_maple_bold);
     lcd_show_chinese(35 + 120 + 48, 121, (uint8_t *)week_str, GRAY, COLOR_BG_TIME, &font24_maple_bold);
 }
 
 void main_page_redraw_inner_temperature(float temperature)
 {
-    char str[10];
+    char str[3] = {'-', '-'}; 
     if (temperature > -10.0f && temperature <= 100.0f)
         snprintf(str, sizeof(str), "%2.0f", temperature);
-    else
-        strcpy(str, "--");
-
     g_back_color = COLOR_BG_INNER;
-    // 原 54 号 -> 改 32 号
-    lcd_show_string(30, 192, 80, 32, 32, str, BLACK);
+    lcd_show_string(30, 192, 80, 54, 54, str, BLACK);
 }
     
 void main_page_redraw_inner_humidity(float humidity)
 {
-    char str[10];
+    char str[3] = {'-', '-'}; 
     if (humidity > 0.0f && humidity <= 99.99f)
-        snprintf(str, sizeof(str), "%2.0f", humidity);
-    else
-        strcpy(str, "--");
-        
+        snprintf(str, sizeof(str), "%2.0f", humidity);  
     g_back_color = COLOR_BG_INNER;
-    // 原 64 号 -> 改 32 号
-    lcd_show_string(25, 239, 80, 32, 32, str, BLACK);
+    lcd_show_string(25, 239, 80, 64, 64, str, BLACK);
 }
 
 void main_page_redraw_outdoor_city(const char *city)
 {
+    char str[9];
+    snprintf(str, sizeof(str), "%s", city);
     g_back_color = COLOR_BG_OUTDOOR;
-    lcd_show_chinese(127, 170, (uint8_t *)city, BLACK, COLOR_BG_OUTDOOR, &font24_maple_bold);
+    lcd_show_chinese(127, 170, (uint8_t *)str, BLACK, COLOR_BG_OUTDOOR, &font24_maple_bold);
 }
 
 void main_page_redraw_outdoor_temperature(float temperature)
 {
-    char str[10];
+    char str[3] = {'-', '-'}; 
     if (temperature > -10.0f && temperature <= 100.0f)
         snprintf(str, sizeof(str), "%2.0f", temperature);
-    else
-        strcpy(str, "--");
-        
     g_back_color = COLOR_BG_OUTDOOR;
-    // 原 54 号 -> 改 32 号
-    lcd_show_string(135, 190, 80, 32, 32, str, BLACK);
+    lcd_show_string(135, 190, 80, 54, 54, str, BLACK);
 }
 
 void main_page_redraw_outdoor_weather_icon(const int code)
 {
-    // 【修改点1】这里不能定义为 uint8_t*，必须定义为图片结构体的指针
     const image_t *icon; 
-    
-    // 【修改点2】去掉强制类型转换，直接赋值结构体的地址
     if (code == 0 || code == 2 || code == 38)
         icon = &icon_qing;
     else if (code == 1 || code == 3)
@@ -163,10 +140,5 @@ void main_page_redraw_outdoor_weather_icon(const int code)
         icon = &icon_zhongxue;
     else 
         icon = &icon_na;
-        
-    // 【修改点3】正确调用 lcd_show_picture
-    // 1. 指针访问成员用 -> 而不是 .
-    // 2. width 和 height 需要传递数值，不要加 &
-    // 3. 图片数据直接传递 icon->data
     lcd_show_picture(166, 240, icon->width, icon->height, icon->data);
 }

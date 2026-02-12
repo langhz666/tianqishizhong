@@ -106,13 +106,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
   lcd_init();
 
-  // welcome_page_display();
+  welcome_page_display();
 
-  // wifi_init();
-  // wifi_page_display();
-  // wifi_wait_connect();
+  wifi_init();
+  wifi_page_display();
+  wifi_wait_connect();
 
-  // main_loop_init();
+  main_loop_init();
   main_page_display();
 
   //test
