@@ -173,32 +173,40 @@ static void time_update(void)
 
 static void inner_update(void)
 {
-    static uint8_t last_temperature, last_humidity;
+    static uint8_t last_temp_int, last_temp_dec, last_humi_int, last_humi_dec;
     
     if (HAL_GetTick() - last_inner_update_tick < INNER_UPDATE_INTERVAL)
         return;
     
     last_inner_update_tick = HAL_GetTick();
     
-    uint8_t temperature = 0, humidity = 0;
+    uint8_t temp_int = 0, temp_dec = 0, humi_int = 0, humi_dec = 0;
     
-    if (dht11_read_data(&temperature, &humidity) != 0)
+    if (dht11_read_data_ex(&temp_int, &temp_dec, &humi_int, &humi_dec) != 0)
     {
         printf("[DHT11] read data failed\n");
         return;
     }
     
-    if (temperature == last_temperature && humidity == last_humidity)
+    if (temp_int == last_temp_int && temp_dec == last_temp_dec && 
+        humi_int == last_humi_int && humi_dec == last_humi_dec)
     {
+        printf("[DHT11] data unchanged, skip update\n");
         return;
     }
     
-    last_temperature = temperature;
-    last_humidity = humidity;
+    last_temp_int = temp_int;
+    last_temp_dec = temp_dec;
+    last_humi_int = humi_int;
+    last_humi_dec = humi_dec;
     
-    printf("[DHT11] Temperature: %d, Humidity: %d\n", temperature, humidity);
-    main_page_redraw_inner_temperature((float)temperature);
-    main_page_redraw_inner_humidity((float)humidity);
+    float temperature = temp_int + temp_dec / 10.0f;
+    float humidity = humi_int + humi_dec / 10.0f;
+    
+    printf("[DHT11] Temperature: %d.%d, Humidity: %d.%d\n", temp_int, temp_dec, humi_int, humi_dec);
+    printf("[DHT11] calling redraw functions\n");
+    main_page_redraw_inner_temperature(temperature);
+    main_page_redraw_inner_humidity(humidity);
 }
 
 static void outdoor_update(void)

@@ -5,16 +5,17 @@
 #include "bsp_delay.h"
 
 
-/* IOæ“ä½œå‡½æ•° */
+/* IO²Ù×÷º¯Êı */
 #define DHT11_DQ_OUT(x)     do{ x ? \
                                 HAL_GPIO_WritePin(DHT11_DQ_GPIO_Port, DHT11_DQ_Pin, GPIO_PIN_SET) : \
                                 HAL_GPIO_WritePin(DHT11_DQ_GPIO_Port, DHT11_DQ_Pin, GPIO_PIN_RESET); \
-                            }while(0)                                                       /* æ•°æ®ç«¯å£è¾“å‡º */
-#define DHT11_DQ_IN         HAL_GPIO_ReadPin(DHT11_DQ_GPIO_Port, DHT11_DQ_Pin)         /* æ•°æ®ç«¯å£è¾“å…¥ */
+                            }while(0)                                                       /* Êı¾İ¶Ë¿ÚÊä³ö */
+#define DHT11_DQ_IN         HAL_GPIO_ReadPin(DHT11_DQ_GPIO_Port, DHT11_DQ_Pin)         /* Êı¾İ¶Ë¿ÚÊäÈë */
 
 
-uint8_t dht11_init(void);   /* åˆå§‹åŒ–DHT11 */
-uint8_t dht11_check(void);  /* æ£€æµ‹æ˜¯å¦å­˜åœ¨DHT11 */
-uint8_t dht11_read_data(uint8_t *temp,uint8_t *humi);   /* è¯»å–æ¸©æ¹¿åº¦ */
+uint8_t dht11_init(void);   /* ³õÊ¼»¯DHT11 */
+uint8_t dht11_check(void);  /* ¼ì²âÊÇ·ñ´æÔÚDHT11 */
+uint8_t dht11_read_data(uint8_t *temp,uint8_t *humi);   /* ¶ÁÈ¡ÎÂÊª¶È£¨ÕûÊı²¿·Ö£© */
+uint8_t dht11_read_data_ex(uint8_t *temp_int, uint8_t *temp_dec, uint8_t *humi_int, uint8_t *humi_dec);   /* ¶ÁÈ¡ÎÂÊª¶È£¨°üº¬Ğ¡Êı²¿·Ö£© */
 
 #endif /* __BSP_DHT11_H__ */
