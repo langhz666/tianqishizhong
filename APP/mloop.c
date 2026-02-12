@@ -278,7 +278,7 @@ static void outdoor_update(void)
     main_page_redraw_outdoor_temperature(weather.temperature);
     main_page_redraw_outdoor_weather_icon(weather.weather_code);
     // 如果 page.h 有重绘城市的函数，建议也加上
-    main_page_redraw_outdoor_city(weather.city);
+    // main_page_redraw_outdoor_city(weather.city);
 }
 
 /* ---------------- 主循环接口 ---------------- */

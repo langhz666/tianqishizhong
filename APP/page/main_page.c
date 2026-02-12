@@ -126,7 +126,7 @@ void main_page_redraw_outdoor_city(const char *city)
     snprintf(str, sizeof(str), "%s", city);
     printf("[LCD] redraw outdoor city: %s\n", city);
     g_back_color = COLOR_BG_OUTDOOR;
-    lcd_show_chinese(127, 170, (uint8_t *)str, BLACK, COLOR_BG_OUTDOOR, &font24_maple_bold);
+    lcd_show_chinese(127, 170, (uint8_t *)str, BLACK, COLOR_BG_OUTDOOR, &font20_maple_bold);
 }
 
 void main_page_redraw_outdoor_temperature(float temperature)
