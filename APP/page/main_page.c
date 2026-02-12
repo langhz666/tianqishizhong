@@ -36,8 +36,8 @@ void main_page_display(void)
     lcd_show_chinese(19, 170, (uint8_t *)"ÊÒÄÚ»·¾³", BLACK, COLOR_BG_INNER, &font24_maple_bold);
     lcd_show_string(86, 191, 20, 32, 32, "C", BLACK);
     lcd_show_string(91, 262, 20, 32, 32, "%", BLACK);
-    main_page_redraw_inner_temperature(0.0f); 
-    main_page_redraw_inner_humidity(0.0f);    
+    main_page_redraw_inner_temperature(999.9f); 
+    main_page_redraw_inner_humidity(999.9f);    
     lcd_fill(125, 165, 224, 304, COLOR_BG_OUTDOOR);
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
@@ -88,16 +88,15 @@ void main_page_redraw_date(rtc_date_time_t *date)
 
 void main_page_redraw_inner_temperature(float temperature)
 {
-    char str[8];
+    char str[4] = "--";
     printf("[LCD] redraw inner temperature: %d\n", (int)temperature);
     if (temperature > -10.0f && temperature <= 100.0f)
     {
-        snprintf(str, sizeof(str), "%d.%d", (int)temperature, (int)(temperature * 10) % 10);
+        snprintf(str, sizeof(str), "%2d", (int)temperature);
         printf("[LCD] temperature in range, formatted: %s\n", str);
     }
     else
     {
-        snprintf(str, sizeof(str), "--");
         printf("[LCD] temperature out of range, using --\n");
     }
     g_back_color = COLOR_BG_INNER;
@@ -106,16 +105,15 @@ void main_page_redraw_inner_temperature(float temperature)
     
 void main_page_redraw_inner_humidity(float humidity)
 {
-    char str[8];
+    char str[4] = "--";
     printf("[LCD] redraw inner humidity: %d\n", (int)humidity);
     if (humidity > 0.0f && humidity <= 99.99f)
     {
-        snprintf(str, sizeof(str), "%d.%d", (int)humidity, (int)(humidity * 10) % 10);
+        snprintf(str, sizeof(str), "%2d", (int)humidity);
         printf("[LCD] humidity in range, formatted: %s\n", str);
     }
     else
     {
-        snprintf(str, sizeof(str), "--");
         printf("[LCD] humidity out of range, using --\n");
     }
     g_back_color = COLOR_BG_INNER;

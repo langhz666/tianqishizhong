@@ -15,7 +15,6 @@
 
 uint8_t dht11_init(void);   /* 初始化DHT11 */
 uint8_t dht11_check(void);  /* 检测是否存在DHT11 */
-uint8_t dht11_read_data(uint8_t *temp,uint8_t *humi);   /* 读取温湿度（整数部分） */
-uint8_t dht11_read_data_ex(uint8_t *temp_int, uint8_t *temp_dec, uint8_t *humi_int, uint8_t *humi_dec);   /* 读取温湿度（包含小数部分） */
+uint8_t dht11_read_data(uint8_t *temp,uint8_t *humi);   /* 读取温湿度 */
 
 #endif /* __BSP_DHT11_H__ */

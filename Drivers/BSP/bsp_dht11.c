@@ -137,44 +137,6 @@ uint8_t dht11_read_data(uint8_t *temp, uint8_t *humi)
 }
 
 /**
- * @brief       从DHT11读取一次数据（包含小数部分）
- * @param       temp_int: 温度整数部分
- * @param       temp_dec: 温度小数部分
- * @param       humi_int: 湿度整数部分
- * @param       humi_dec: 湿度小数部分
- * @retval      0, 正常.
- *              1, 失败
- */
-uint8_t dht11_read_data_ex(uint8_t *temp_int, uint8_t *temp_dec, uint8_t *humi_int, uint8_t *humi_dec)
-{
-    uint8_t buf[5];
-    uint8_t i;
-    dht11_reset();
-
-    if (dht11_check() == 0)
-    {
-        for (i = 0; i < 5; i++)     /* 读取40位数据 */
-        {
-            buf[i] = dht11_read_byte();
-        }
-
-        if ((buf[0] + buf[1] + buf[2] + buf[3]) == buf[4])
-        {
-            *humi_int = buf[0];
-            *humi_dec = buf[1];
-            *temp_int = buf[2];
-            *temp_dec = buf[3];
-        }
-    }
-    else
-    {
-        return 1;
-    }
-    
-    return 0;
-}
-
-/**
  * @brief       初始化DHT11的IO口 DQ 同时检测DHT11的存在
  * @param       无
  * @retval      0, 正常
