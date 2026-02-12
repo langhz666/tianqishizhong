@@ -37,7 +37,7 @@ void main_page_display(void)
     lcd_show_string(91, 262, 20, 32, 32, "%", BLACK);
     main_page_redraw_inner_temperature(99.9f); 
     main_page_redraw_inner_humidity(99.9f);    
-    lcd_fill(115, 165, 224, 304, COLOR_BG_OUTDOOR);
+    lcd_fill(125, 165, 224, 304, COLOR_BG_OUTDOOR);
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
     lcd_show_picture(139, 239, icon_wenduji.width, icon_wenduji.height, icon_wenduji.data);
