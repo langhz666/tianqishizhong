@@ -14,13 +14,6 @@
 #define COLOR_BG_OUTDOOR  0xFD49 // mkcolor(254, 135, 75)  -> Orange
 
 
-#define ICON_WIFI_W      20 
-#define ICON_WIFI_H      20
-#define ICON_TEMP_W      20
-#define ICON_TEMP_H      40
-#define ICON_WEATHER_W   40
-#define ICON_WEATHER_H   40
-
 
 #ifndef WIFI_SSID
 #define WIFI_SSID "Connecting..."
@@ -30,7 +23,7 @@ void main_page_display(void)
 {
     lcd_clear(BLACK);
     lcd_fill(15, 15, 224, 154, COLOR_BG_TIME);
-    lcd_show_picture(23, 20, ICON_WIFI_W, ICON_WIFI_H, (const uint8_t *)&icon_wifi);
+    lcd_show_picture(23, 20, icon_wifi.width, icon_wifi.height, icon_wifi.data);
     main_page_redraw_wifi_ssid(WIFI_SSID);
     g_back_color = COLOR_BG_TIME; // 设置文字背景色
     lcd_show_string(25, 42, 200, 32, 32, "--:--", BLACK);
@@ -47,7 +40,7 @@ void main_page_display(void)
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
     // 温度计图标
-    lcd_show_picture(139, 239, ICON_TEMP_W, ICON_TEMP_H, (const uint8_t *)&icon_wenduji);
+    lcd_show_picture(139, 239, icon_wenduji.width, icon_wenduji.height, icon_wenduji.data);
     main_page_redraw_outdoor_city("合肥"); // 假设 city 是纯汉字，需特殊处理
     main_page_redraw_outdoor_temperature(99.9f);
     main_page_redraw_outdoor_weather_icon(-1);
@@ -147,26 +140,30 @@ void main_page_redraw_outdoor_temperature(float temperature)
 
 void main_page_redraw_outdoor_weather_icon(const int code)
 {
-    const uint8_t *icon; // 假设图片是 uint8_t 数组
+    // 【修改点1】这里不能定义为 uint8_t*，必须定义为图片结构体的指针
+    const image_t *icon; 
     
-    // 这里需要根据 imag.h 的定义，如果是结构体请改为结构体指针
+    // 【修改点2】去掉强制类型转换，直接赋值结构体的地址
     if (code == 0 || code == 2 || code == 38)
-        icon = (const uint8_t *)&icon_qing;
+        icon = &icon_qing;
     else if (code == 1 || code == 3)
-        icon = (const uint8_t *)&icon_yueliang;
+        icon = &icon_yueliang;
     else if (code == 4 || code == 9)
-        icon = (const uint8_t *)&icon_yintian;
+        icon = &icon_yintian;
     else if (code == 5 || code == 6 || code == 7 || code == 8)
-        icon = (const uint8_t *)&icon_duoyun;
+        icon = &icon_duoyun;
     else if (code == 10 || code == 13 || code == 14 || code == 15 || code == 16 || code == 17 || code == 18 || code == 19)
-        icon = (const uint8_t *)&icon_zhongyu;
+        icon = &icon_zhongyu;
     else if (code == 11 || code == 12)
-        icon = (const uint8_t *)&icon_leizhenyu;
+        icon = &icon_leizhenyu;
     else if (code == 20 || code == 21 || code == 22 || code == 23 || code == 24 || code == 25)
-        icon = (const uint8_t *)&icon_zhongxue;
+        icon = &icon_zhongxue;
     else 
-        icon = (const uint8_t *)&icon_na;
+        icon = &icon_na;
         
-    // 显示图片，务必确认 ICON_WEATHER_W/H 与实际图片尺寸一致
-    lcd_show_picture(166, 240, ICON_WEATHER_W, ICON_WEATHER_H, icon);
+    // 【修改点3】正确调用 lcd_show_picture
+    // 1. 指针访问成员用 -> 而不是 .
+    // 2. width 和 height 需要传递数值，不要加 &
+    // 3. 图片数据直接传递 icon->data
+    lcd_show_picture(166, 240, icon->width, icon->height, icon->data);
 }

@@ -1,3 +1,11 @@
+/*
+ * @Author: langhz666 3204498297@qq.com
+ * @Date: 2026-02-11 16:24:31
+ * @LastEditors: langhz666 3204498297@qq.com
+ * @LastEditTime: 2026-02-12 10:39:54
+ * @FilePath: \luoji\APP\page\wifi_page.c
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #include <stdint.h>
 #include <string.h>
 #include "lcd.h"
@@ -9,15 +17,13 @@
 
 #define COLOR_WIFI_TEXT    0x07FD 
 #define COLOR_CONNECTING   0x965F
-#define IMG_WIFI_W  180
-#define IMG_WIFI_H  160
 
 void wifi_page_display(void)
 {
     static const char *ssid = WIFI_SSID;
     g_back_color = BLACK;
-    lcd_clear(BLACK);
-    lcd_show_picture(30, 15, IMG_WIFI_W, IMG_WIFI_H, (const uint8_t *)&img_wifi);
+    lcd_fill(0, 0, lcddev.width - 1, lcddev.height - 1, BLACK);
+    lcd_show_picture(30, 15, img_wifi.width, img_wifi.height, img_wifi.data);
     lcd_show_string(88, 191, 200, 32, 32, "WiFi", COLOR_WIFI_TEXT);
     uint16_t ssid_len_px = strlen(ssid) * 12; 
     uint16_t ssid_startx = 0;

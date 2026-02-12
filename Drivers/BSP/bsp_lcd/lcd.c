@@ -831,7 +831,7 @@ void lcd_clear(uint16_t color)
     uint32_t totalpoint = lcddev.width;
 
     totalpoint *= lcddev.height;    /* 得到总点数 */
-    lcd_set_cursor(0x00, 0x0000);   /* 设置光标位置 */
+    lcd_set_window(0, 0, lcddev.width, lcddev.height);   /* 设置显示窗口 */
     lcd_write_ram_prepare();        /* 开始写入GRAM */
 
     for (index = 0; index < totalpoint; index++)
