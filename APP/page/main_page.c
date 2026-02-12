@@ -67,8 +67,6 @@ void main_page_redraw_date(rtc_date_time_t *date)
     char str_date[16];
     char *week_str;
 
-    printf("[LCD] redraw date: %04u/%02u/%02u, weekday: %d\n", date->year, date->month, date->day, date->weekday);
-
     snprintf(str_date, sizeof(str_date), "%04u/%02u/%02u", date->year, date->month, date->day);
 
     switch(date->weekday) {
@@ -82,7 +80,6 @@ void main_page_redraw_date(rtc_date_time_t *date)
         default: week_str = "X"; break;
     }
 
-    printf("[LCD] week_str: %s\n", week_str);
     g_back_color = COLOR_BG_TIME;
     lcd_show_string(35, 121, 120, 24, 24, str_date, GRAY);
     lcd_show_chinese(160, 125, (uint8_t *)"ÐÇÆÚ", BLACK, COLOR_BG_TIME, &font20_maple_bold);

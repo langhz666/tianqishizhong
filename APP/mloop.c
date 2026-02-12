@@ -184,21 +184,17 @@ static void inner_update(void)
     
     if (dht11_read_data(&temperature, &humidity) != 0)
     {
-        printf("[DHT11] read data failed\n");
         return;
     }
     
     if (temperature == last_temperature && humidity == last_humidity)
     {
-        printf("[DHT11] data unchanged, skip update\n");
         return;
     }
     
     last_temperature = temperature;
     last_humidity = humidity;
     
-    printf("[DHT11] Temperature: %d, Humidity: %d\n", temperature, humidity);
-    printf("[DHT11] calling redraw functions\n");
     main_page_redraw_inner_temperature((float)temperature);
     main_page_redraw_inner_humidity((float)humidity);
 }
