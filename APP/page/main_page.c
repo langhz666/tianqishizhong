@@ -10,10 +10,11 @@
 #include "app.h"
 #include "font.h"
 
-#define COLOR_BG_TIME     0xF7DE // mkcolor(248, 248, 248) -> White-ish
+#define COLOR_BG_TIME     WHITE // mkcolor(248, 248, 248) -> White-ish
 #define COLOR_BG_INNER    0x86D5 // mkcolor(136, 217, 234) -> Light Blue
-#define COLOR_BG_OUTDOOR  0xFD49 // mkcolor(254, 135, 75)  -> Orange
-
+#define COLOR_BG_OUTDOOR  0xFD29 // mkcolor(254, 135, 75)  -> Orange
+// 253, 135, 75
+// 0xFC29
 
 
 #ifndef WIFI_SSID
