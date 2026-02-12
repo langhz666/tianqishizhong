@@ -1,68 +1,75 @@
-#include "main.h"       // å¼•å…¥ HAL åº“å®šä¹‰ (HAL_GetTick)
+#include "main.h"       // ÒıÈë HAL ¿â¶¨Òå (HAL_GetTick)
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
 
-/* BSP å¤´æ–‡ä»¶é€‚é… */
-#include "bsp_rtc.h"    // æ›¿æ¢ rtc.h
-#include "bsp_espat.h"  // æ›¿æ¢ esp_at.h
-#include "bsp_dht11.h"   // æ›¿æ¢ dht11.h
+/* BSP Í·ÎÄ¼şÊÊÅä */
+#include "bsp_rtc.h"    // Ìæ»» rtc.h
+#include "bsp_espat.h"  // Ìæ»» esp_at.h
+#include "bsp_dht11.h"   // Ìæ»» dht11.h
 
 #include "weather.h"
-#include "lcd.h"        // å¼•å…¥ LCD ä»¥ä¾¿é‡ç»˜
+#include "lcd.h"        // ÒıÈë LCD ÒÔ±ãÖØ»æ
 #include "page.h"
 #include "app.h"
 
-/* 1. æ—¶é—´å•ä½å®å®šä¹‰ (é€‚é… HAL_GetTick çš„æ¯«ç§’åŸºå‡†) */
+/* 1. Ê±¼äµ¥Î»ºê¶¨Òå (ÊÊÅä HAL_GetTick µÄºÁÃë»ù×¼) */
 #define MILLISECONDS(x) (x)
 #define SECONDS(x)      ((x) * 1000)
 #define MINUTES(x)      (SECONDS(x) * 60)
 #define HOURS(x)        (MINUTES(x) * 60)
 #define DAYS(x)         (HOURS(x) * 24)
 
-/* 2. åˆ·æ–°é—´éš”å®šä¹‰ */
-#define TIME_SYNC_INTERVAL          DAYS(1)
+/* 2. Ë¢ĞÂ¼ä¸ô¶¨Òå */
+#define TIME_SYNC_INTERVAL          SECONDS(10)
 #define WIFI_UPDATE_INTERVAL        SECONDS(5)
 #define TIME_UPDATE_INTERVAL        SECONDS(1)
 #define INNER_UPDATE_INTERVAL       SECONDS(3)
 #define OUTDOOR_UPDATE_INTERVAL     MINUTES(1)
 
-/* 3. ä¸Šæ¬¡æ‰§è¡Œçš„æ—¶é—´æˆ³ (æ›¿ä»£åŸå…ˆçš„ delay è®¡æ•°å™¨) */
+/* 3. ÉÏ´ÎÖ´ĞĞµÄÊ±¼ä´Á (Ìæ´úÔ­ÏÈµÄ delay ¼ÆÊıÆ÷) */
 static uint32_t last_time_sync_tick = 0;
 static uint32_t last_wifi_update_tick = 0;
 static uint32_t last_time_update_tick = 0;
 static uint32_t last_inner_update_tick = 0;
 static uint32_t last_outdoor_update_tick = 0;
 
-/* ---------------- æ ¸å¿ƒåˆå§‹åŒ–å‡½æ•° ---------------- */
+static void time_sync(void);
+
+/* ---------------- ºËĞÄ³õÊ¼»¯º¯Êı ---------------- */
 
 void main_loop_init(void)
 {
-    // ä½¿ç”¨ HAL_GetTick ä¸éœ€è¦æ³¨å†Œå›è°ƒ
-    // è¿™é‡Œåªéœ€åˆå§‹åŒ–æ—¶é—´æˆ³ï¼Œç¡®ä¿ä¸Šç”µåä»»åŠ¡èƒ½ç«‹å³è¿è¡Œä¸€æ¬¡
+    main_page_display();
+    
+    // Ê¹ÓÃ HAL_GetTick ²»ĞèÒª×¢²á»Øµ÷
+    // ÕâÀïÖ»Ğè³õÊ¼»¯Ê±¼ä´Á£¬È·±£ÉÏµçºóÈÎÎñÄÜÁ¢¼´ÔËĞĞÒ»´Î
     last_time_sync_tick = 0;
     last_wifi_update_tick = 0;
     last_time_update_tick = 0;
     last_inner_update_tick = 0;
     last_outdoor_update_tick = 0;
+    
+    // Ê×´ÎÆô¶¯Ê±Á¢¼´Í¬²½ÍøÂçÊ±¼ä
+    time_sync();
 }
 
-/* ---------------- å†…éƒ¨é™æ€ä»»åŠ¡å‡½æ•° (ä¿æŒåŸæœ‰åç§°) ---------------- */
+/* ---------------- ÄÚ²¿¾²Ì¬ÈÎÎñº¯Êı (±£³ÖÔ­ÓĞÃû³Æ) ---------------- */
 
 static void time_sync(void)
 {
-    // éé˜»å¡å»¶æ—¶åˆ¤æ–­ï¼šå¦‚æœ (å½“å‰æ—¶é—´ - ä¸Šæ¬¡æ—¶é—´) < é—´éš”ï¼Œåˆ™é€€å‡º
+    // ·Ç×èÈûÑÓÊ±ÅĞ¶Ï£ºÈç¹û (µ±Ç°Ê±¼ä - ÉÏ´ÎÊ±¼ä) < ¼ä¸ô£¬ÔòÍË³ö
     if (HAL_GetTick() - last_time_sync_tick < TIME_SYNC_INTERVAL)
         return;
     
-    // æ›´æ–°æ‰§è¡Œæ—¶é—´
+    // ¸üĞÂÖ´ĞĞÊ±¼ä
     last_time_sync_tick = HAL_GetTick();
     
     esp_date_time_t esp_date = { 0 };
     if (!esp_at_sntp_get_time(&esp_date))
     {
         printf("[SNTP] get time failed\n");
-        // å¤±è´¥é‡è¯•é€»è¾‘ï¼šä¿®æ”¹ä¸Šæ¬¡æ‰§è¡Œæ—¶é—´ï¼Œä½¿ä¸‹æ¬¡æ‰§è¡Œåœ¨ 1ç§’å
+        // Ê§°ÜÖØÊÔÂß¼­£ºĞŞ¸ÄÉÏ´ÎÖ´ĞĞÊ±¼ä£¬Ê¹ÏÂ´ÎÖ´ĞĞÔÚ 1Ãëºó
         last_time_sync_tick = HAL_GetTick() - TIME_SYNC_INTERVAL + SECONDS(1);
         return;
     }
@@ -87,10 +94,10 @@ static void time_sync(void)
     rtc_date.second = esp_date.second;
     rtc_date.weekday = esp_date.weekday;
     
-    // ä½¿ç”¨æ–°çš„ BSP æ¥å£
+    // Ê¹ÓÃĞÂµÄ BSP ½Ó¿Ú
     bsp_rtc_set_time(&rtc_date);
     
-    // åŒæ­¥æˆåŠŸåï¼Œå¼ºåˆ¶è®© time_update ç«‹å³æ‰§è¡Œä¸€æ¬¡åˆ·æ–°å±å¹•
+    // Í¬²½³É¹¦ºó£¬Ç¿ÖÆÈÃ time_update Á¢¼´Ö´ĞĞÒ»´ÎË¢ĞÂÆÁÄ»
     last_time_update_tick = 0;
 }
 
@@ -146,7 +153,7 @@ static void time_update(void)
     last_time_update_tick = HAL_GetTick();
     
     rtc_date_time_t date;
-    // ä½¿ç”¨æ–°çš„ BSP æ¥å£
+    // Ê¹ÓÃĞÂµÄ BSP ½Ó¿Ú
     bsp_rtc_get_time(&date);
     
     if (date.year < 2020)
@@ -204,7 +211,7 @@ static void outdoor_update(void)
     last_outdoor_update_tick = HAL_GetTick();
     
     weather_info_t weather = { 0 };
-    // æ³¨æ„ï¼šè¿™é‡Œçš„ URL æ˜¯ç¤ºä¾‹ï¼Œè¯·ç¡®ä¿ä½ çš„ API Key æ˜¯æœ€æ–°çš„
+    // ×¢Òâ£ºÕâÀïµÄ URL ÊÇÊ¾Àı£¬ÇëÈ·±£ÄãµÄ API Key ÊÇ×îĞÂµÄ
     const char *weather_url = "https://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
     
     const char *weather_http_response = esp_at_http_get(weather_url);
@@ -230,11 +237,11 @@ static void outdoor_update(void)
     
     main_page_redraw_outdoor_temperature(weather.temperature);
     main_page_redraw_outdoor_weather_icon(weather.weather_code);
-    // å¦‚æœ page.h æœ‰é‡ç»˜åŸå¸‚çš„å‡½æ•°ï¼Œå»ºè®®ä¹ŸåŠ ä¸Š
+    // Èç¹û page.h ÓĞÖØ»æ³ÇÊĞµÄº¯Êı£¬½¨ÒéÒ²¼ÓÉÏ
     main_page_redraw_outdoor_city(weather.city);
 }
 
-/* ---------------- ä¸»å¾ªç¯æ¥å£ ---------------- */
+/* ---------------- Ö÷Ñ­»·½Ó¿Ú ---------------- */
 
 void main_loop(void)
 {

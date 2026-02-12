@@ -88,7 +88,7 @@ void main_page_redraw_date(rtc_date_time_t *date)
 
 void main_page_redraw_inner_temperature(float temperature)
 {
-    char str[3] = {'-', '-'}; 
+    char str[4] = "--"; 
     if (temperature > -10.0f && temperature <= 100.0f)
         snprintf(str, sizeof(str), "%2.0f", temperature);
     g_back_color = COLOR_BG_INNER;
@@ -97,7 +97,7 @@ void main_page_redraw_inner_temperature(float temperature)
     
 void main_page_redraw_inner_humidity(float humidity)
 {
-    char str[3] = {'-', '-'}; 
+    char str[4] = "--"; 
     if (humidity > 0.0f && humidity <= 99.99f)
         snprintf(str, sizeof(str), "%2.0f", humidity);  
     g_back_color = COLOR_BG_INNER;
@@ -114,7 +114,7 @@ void main_page_redraw_outdoor_city(const char *city)
 
 void main_page_redraw_outdoor_temperature(float temperature)
 {
-    char str[3] = {'-', '-'}; 
+    char str[4] = "--"; 
     if (temperature > -10.0f && temperature <= 100.0f)
         snprintf(str, sizeof(str), "%2.0f", temperature);
     g_back_color = COLOR_BG_OUTDOOR;

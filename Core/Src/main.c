@@ -104,6 +104,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  DWT_Delay_Init();
+  dht11_init();
   lcd_init();
 
   welcome_page_display();
