@@ -105,12 +105,14 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   lcd_init();
-  welcome_page_display();
-  wifi_init();
+  // welcome_page_display();
+  // wifi_init();
   wifi_page_display();
-  wifi_wait_connect();
-  main_loop_init();
-  main_page_display();
+  // lcd_show_chinese(84, 263, (uint8_t *)"???", WHITE, BLACK, &font24_maple_bold);
+  // lcd_show_chinese(84, 263, (uint8_t *)"¡¨Ω”÷–", WHITE, BLACK, &font24_maple_bold);
+  // wifi_wait_connect();
+  // main_loop_init();
+  // main_page_display();
   /* USER CODE END 2 */
 
   /* Infinite loop */
