@@ -2,7 +2,7 @@
  * @Author: langhz666 3204498297@qq.com
  * @Date: 2026-02-11 16:24:31
  * @LastEditors: langhz666 3204498297@qq.com
- * @LastEditTime: 2026-02-12 10:21:36
+ * @LastEditTime: 2026-02-12 11:16:10
  * @FilePath: \luoji\APP\page\error_page.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -18,7 +18,7 @@ void error_page_display(const char *msg)
     g_back_color = BLACK; 
     lcd_clear(BLACK);
     lcd_show_picture(40, 37, img_error.width, img_error.height, img_error.data);
-    uint8_t font_size = 24; 
+    uint8_t font_size = 16; 
     int char_width = font_size / 2;
     int str_len_px = strlen(msg) * char_width; 
     uint16_t startx = 0;

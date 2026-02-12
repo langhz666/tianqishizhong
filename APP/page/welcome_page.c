@@ -20,7 +20,8 @@
 void welcome_page_display(void)
 {
     g_back_color = BLACK;
-    lcd_fill(0, 0, lcddev.width - 1, lcddev.height - 1, BLACK);
+    lcd_clear(BLACK);
+    // lcd_fill(0, 0, lcddev.width - 1, lcddev.height - 1, BLACK);
     lcd_show_picture(30, 10, img_meihua.width, img_meihua.height, img_meihua.data);
     lcd_show_chinese(40, 205, (uint8_t *)"梅花嵌入式", COLOR_PINK_MEIHUA, BLACK, &font32_maple_bold);
     lcd_show_chinese(56, 233, (uint8_t *)"天气时钟", COLOR_BLUE_TITLE, BLACK, &font32_maple_bold);

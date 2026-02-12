@@ -2,7 +2,7 @@
  * @Author: langhz666 3204498297@qq.com
  * @Date: 2026-02-11 16:24:31
  * @LastEditors: langhz666 3204498297@qq.com
- * @LastEditTime: 2026-02-12 10:39:54
+ * @LastEditTime: 2026-02-12 11:18:12
  * @FilePath: \luoji\APP\page\wifi_page.c
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -22,7 +22,8 @@ void wifi_page_display(void)
 {
     static const char *ssid = WIFI_SSID;
     g_back_color = BLACK;
-    lcd_fill(0, 0, lcddev.width - 1, lcddev.height - 1, BLACK);
+    lcd_clear(BLACK);
+    // lcd_fill(0, 0, lcddev.width - 1, lcddev.height - 1, BLACK);
     lcd_show_picture(30, 15, img_wifi.width, img_wifi.height, img_wifi.data);
     lcd_show_string(88, 191, 200, 32, 32, "WiFi", COLOR_WIFI_TEXT);
     uint16_t ssid_len_px = strlen(ssid) * 12; 
