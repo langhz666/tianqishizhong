@@ -105,11 +105,16 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
   lcd_init();
+
   welcome_page_display();
+
   wifi_init();
   wifi_page_display();
   wifi_wait_connect();
+
   main_loop_init();
+  main_page_display();
+
   //test
   // main_page_display();
   // welcome_page_display();
