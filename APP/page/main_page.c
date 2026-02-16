@@ -10,11 +10,17 @@
 #include "app.h"
 #include "font.h"
 
-#define COLOR_BG_TIME     WHITE // mkcolor(248, 248, 248) -> White-ish
-#define COLOR_BG_INNER    0x86D5 // mkcolor(136, 217, 234) -> Light Blue
-#define COLOR_BG_OUTDOOR  0xFD29 // mkcolor(254, 135, 75)  -> Orange
-// 253, 135, 75
-// 0xFC29
+#define DEBUG_ENABLED  1
+
+#if DEBUG_ENABLED
+#define DEBUG_PRINTF(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTF(fmt, ...)
+#endif
+
+#define COLOR_BG_TIME     WHITE
+#define COLOR_BG_INNER    0x86D5
+#define COLOR_BG_OUTDOOR  0xFD29
 
 
 #ifndef WIFI_SSID
@@ -43,23 +49,27 @@ void main_page_display(void)
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(192, 189, 20, 32, 32, "C", BLACK);
     lcd_show_picture(139, 239, icon_wenduji.width, icon_wenduji.height, icon_wenduji.data);
-    main_page_redraw_outdoor_city("ºâÑô"); 
+    lcd_show_chinese(127, 170, (uint8_t *)"ºâÑô", BLACK, COLOR_BG_OUTDOOR, &font20_maple_bold);
     main_page_redraw_outdoor_temperature(99.9f);
     main_page_redraw_outdoor_weather_icon(-1);
 }
 
 void main_page_redraw_wifi_ssid(const char *ssid)
 {
+    lcd_lock();
     g_back_color = COLOR_BG_TIME;
     lcd_show_string(50, 23, 160, 16, 16, (char *)ssid, GRAY);
+    lcd_unlock();
 }
 
 void main_page_redraw_time(rtc_date_time_t *time)
 {
     char str[16];
     snprintf(str, sizeof(str), "%02u:%02u:%02u", time->hour, time->minute, time->second);
+    lcd_lock();
     g_back_color = COLOR_BG_TIME;
     lcd_show_string(25, 60, 200, 48, 48, str, BLACK);
+    lcd_unlock();
 }
 
 void main_page_redraw_date(rtc_date_time_t *date)
@@ -80,53 +90,53 @@ void main_page_redraw_date(rtc_date_time_t *date)
         default: week_str = "X"; break;
     }
 
+    lcd_lock();
     g_back_color = COLOR_BG_TIME;
     lcd_show_string(35, 121, 120, 24, 24, str_date, GRAY);
     lcd_show_chinese(160, 125, (uint8_t *)"ĞÇÆÚ", BLACK, COLOR_BG_TIME, &font20_maple_bold);
     lcd_show_chinese(160 + 40, 125, (uint8_t *)week_str, BLACK, COLOR_BG_TIME, &font20_maple_bold);
+    lcd_unlock();
 }
 
 void main_page_redraw_inner_temperature(float temperature)
 {
-    char str[4] = "--";
-    printf("[LCD] redraw inner temperature: %d\n", (int)temperature);
-    if (temperature > -10.0f && temperature <= 100.0f)
+    char str[8] = "--";
+    int temp_int = (int)temperature;
+    DEBUG_PRINTF("[LCD] redraw inner temperature: %d\n", temp_int);
+    if (temp_int >= 0 && temp_int <= 100)
     {
-        snprintf(str, sizeof(str), "%2d", (int)temperature);
-        printf("[LCD] temperature in range, formatted: %s\n", str);
+        snprintf(str, sizeof(str), "%2d", temp_int);
     }
-    else
-    {
-        printf("[LCD] temperature out of range, using --\n");
-    }
+    lcd_lock();
     g_back_color = COLOR_BG_INNER;
     lcd_show_string(30, 192, 80, 54, 54, str, BLACK);
+    lcd_unlock();
 }
     
 void main_page_redraw_inner_humidity(float humidity)
 {
-    char str[4] = "--";
-    printf("[LCD] redraw inner humidity: %d\n", (int)humidity);
-    if (humidity > 0.0f && humidity <= 99.99f)
+    char str[8] = "--";
+    int humid_int = (int)humidity;
+    DEBUG_PRINTF("[LCD] redraw inner humidity: %d\n", humid_int);
+    if (humid_int >= 0 && humid_int <= 100)
     {
-        snprintf(str, sizeof(str), "%2d", (int)humidity);
-        printf("[LCD] humidity in range, formatted: %s\n", str);
+        snprintf(str, sizeof(str), "%2d", humid_int);
     }
-    else
-    {
-        printf("[LCD] humidity out of range, using --\n");
-    }
+    lcd_lock();
     g_back_color = COLOR_BG_INNER;
     lcd_show_string(25, 239, 80, 64, 64, str, BLACK);
+    lcd_unlock();
 }
 
 void main_page_redraw_outdoor_city(const char *city)
 {
     char str[9];
     snprintf(str, sizeof(str), "%s", city);
-    printf("[LCD] redraw outdoor city: %s\n", city);
+    DEBUG_PRINTF("[LCD] redraw outdoor city: %s\n", city);
+    lcd_lock();
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_chinese(127, 170, (uint8_t *)str, BLACK, COLOR_BG_OUTDOOR, &font20_maple_bold);
+    lcd_unlock();
 }
 
 void main_page_redraw_outdoor_temperature(float temperature)
@@ -134,59 +144,53 @@ void main_page_redraw_outdoor_temperature(float temperature)
     char str[4] = "--";
     if (temperature > -10.0f && temperature <= 100.0f)
         snprintf(str, sizeof(str), "%2d", (int)temperature);
+    lcd_lock();
     g_back_color = COLOR_BG_OUTDOOR;
     lcd_show_string(135, 190, 80, 54, 54, str, BLACK);
+    lcd_unlock();
 }
 
 void main_page_redraw_outdoor_weather_icon(const int code)
 {
     const image_t *icon;
-    printf("[LCD] redraw weather icon, code: %d\n", code);
+    DEBUG_PRINTF("[LCD] redraw weather icon, code: %d\n", code);
     if (code == 0 || code == 2 || code == 38)
     {
         icon = &icon_qing;
-        printf("[LCD] using icon_qing (clear)\n");
     }
     else if (code == 1 || code == 3)
     {
         icon = &icon_yueliang;
-        printf("[LCD] using icon_yueliang (moon)\n");
     }
     else if (code == 4 || code == 9)
     {
         icon = &icon_yintian;
-        printf("[LCD] using icon_yintian (cloudy)\n");
     }
     else if (code == 5 || code == 6 || code == 7 || code == 8)
     {
         icon = &icon_duoyun;
-        printf("[LCD] using icon_duoyun (partly cloudy)\n");
     }
     else if (code == 10 || code == 13 || code == 14 || code == 15 || code == 16 || code == 17 || code == 18 || code == 19)
     {
         icon = &icon_zhongyu;
-        printf("[LCD] using icon_zhongyu (rain)\n");
     }
     else if (code == 11 || code == 12)
     {
         icon = &icon_leizhenyu;
-        printf("[LCD] using icon_leizhenyu (thunderstorm)\n");
     }
     else if (code == 20 || code == 21 || code == 22 || code == 23 || code == 24 || code == 25)
     {
         icon = &icon_zhongxue;
-        printf("[LCD] using icon_zhongxue (snow)\n");
     }
     else if (code == 30)
     {
         icon = &icon_yintian;
-        printf("[LCD] using icon_yintian (foggy)\n");
     }
     else
     {
         icon = &icon_na;
-        printf("[LCD] using icon_na (unknown)\n");
     }
-    printf("[LCD] displaying icon at (166, 240), size: %dx%d\n", icon->width, icon->height);
+    lcd_lock();
     lcd_show_picture(166, 240, icon->width, icon->height, icon->data);
+    lcd_unlock();
 }

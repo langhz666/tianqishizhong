@@ -43,7 +43,7 @@ static const at_ack_match_t at_ack_matches[] =
     {AT_ACK_READY, "ready\r\n"},
 };
 
-static char rxbuf[1024]; // 接收缓冲区
+static char rxbuf[2048]; // 接收缓冲区
 
 // 内部函数声明
 static void esp_at_usart_write(const char *data);
@@ -374,23 +374,30 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
 
 const char *esp_at_http_get(const char *url)
 {
-    // 复用接收缓冲区作为命令发送缓冲区，节省内存
-    // 注意：如果 URL 极长，这里需要更大的 buffer
-    char *txbuf = rxbuf; 
-    
     if(strlen(url) > 512) {
+        printf("[HTTP] URL too long\n");
         return NULL;
     }
 
-    int ret = snprintf(txbuf, sizeof(rxbuf), "AT+HTTPCLIENT=2,1,\"%s\",,,2", url);
-    if (ret < 0 || ret >= sizeof(rxbuf)) return NULL;
+    char cmd[600];
+    int ret = snprintf(cmd, sizeof(cmd), "AT+HTTPCLIENT=2,1,\"%s\",,,2", url);
+    if (ret < 0 || ret >= sizeof(cmd)) {
+        printf("[HTTP] Command buffer overflow\n");
+        return NULL;
+    }
 
-    bool ok = esp_at_write_command(txbuf, 15000);
+    printf("[HTTP] Sending: %s\n", cmd);
+    
+    bool ok = esp_at_write_command(cmd, 15000);
     
     if (!ok)
     {
+        printf("[HTTP] Command failed\n");
         return NULL;
     }
     
-    return esp_at_get_response();
+    const char *response = esp_at_get_response();
+    printf("[HTTP] Response length: %d\n", strlen(response));
+    
+    return response;
 }

@@ -11,5 +11,10 @@ void wifi_wait_connect(void);
 void main_loop_init(void);
 void main_loop(void);
 
+void lcd_lock(void);
+void lcd_unlock(void);
+
+uint8_t wifi_is_ready(void);
+uint8_t time_is_synced(void);
 
 #endif /* __APP_H__ */

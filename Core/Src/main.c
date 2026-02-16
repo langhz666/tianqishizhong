@@ -38,6 +38,7 @@
 #include "app.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -125,21 +126,21 @@ int main(void)
   MX_USART2_UART_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  printf("[MAIN] Hardware init complete\n");
+  printf("[MAIN] SystemCoreClock = %lu\n", SystemCoreClock);
+  
   DWT_Delay_Init();
+  printf("[MAIN] DWT init done\n");
+  
   dht11_init();
+  printf("[MAIN] DHT11 init done\n");
+  
   lcd_init();
+  printf("[MAIN] LCD init done\n");
+  
   welcome_page_display();
+  printf("[MAIN] Welcome page displayed\n");
 
-  wifi_init();
-  wifi_page_display();
-  wifi_wait_connect();
-
-  main_loop_init();
-  main_page_display();
-
-  //test
-  // main_page_display();
-  // welcome_page_display();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -155,7 +156,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    main_loop();  
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

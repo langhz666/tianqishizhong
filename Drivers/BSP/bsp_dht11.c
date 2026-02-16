@@ -124,16 +124,16 @@ uint8_t dht11_read_data(uint8_t *temp, uint8_t *humi)
 
         if ((buf[0] + buf[1] + buf[2] + buf[3]) == buf[4])
         {
-            *humi = buf[0];
-            *temp = buf[2];
+            if (buf[2] >= 0 && buf[2] <= 50 && buf[0] >= 20 && buf[0] <= 90)
+            {
+                *humi = buf[0];
+                *temp = buf[2];
+                return 0;
+            }
         }
     }
-    else
-    {
-        return 1;
-    }
     
-    return 0;
+    return 1;
 }
 
 /**
