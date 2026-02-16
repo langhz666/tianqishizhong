@@ -59,13 +59,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define KEY_2_Pin GPIO_PIN_2
 #define KEY_2_GPIO_Port GPIOE
-#define KEY_2_EXTI_IRQn EXTI2_IRQn
 #define KEY_1_Pin GPIO_PIN_3
 #define KEY_1_GPIO_Port GPIOE
-#define KEY_1_EXTI_IRQn EXTI3_IRQn
 #define KEY_0_Pin GPIO_PIN_4
 #define KEY_0_GPIO_Port GPIOE
-#define KEY_0_EXTI_IRQn EXTI4_IRQn
 #define DHT11_DQ_Pin GPIO_PIN_6
 #define DHT11_DQ_GPIO_Port GPIOF
 #define BEEP_Pin GPIO_PIN_8

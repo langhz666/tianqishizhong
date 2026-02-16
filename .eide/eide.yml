@@ -7,7 +7,7 @@ srcDirs:
   - Core
   - Drivers
   - APP
-  - thirdlib
+  - Middlewares/Third_Party/FreeRTOS/Source
 virtualFolder:
   name: <virtual_root>
   files:
@@ -36,15 +36,20 @@ targets:
         - APP/weather
         - APP/page
         - APP
+        - Middlewares/Third_Party/FreeRTOS/Source/include
+        - Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+        - Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
       libList: []
     excludeList:
       - Drivers/BSP/bsp_lcd/lcd_ex.c
+      - thirdlib/freertos/**/*.c
+      - thirdlib/portable/**/*.c
     toolchain: GCC
     toolchainConfigMap:
       GCC:
         archExtensions: ""
         cpuType: Cortex-M4
-        floatingPointHardware: none
+        floatingPointHardware: single
         options:
           version: 5
           afterBuildTasks: []
