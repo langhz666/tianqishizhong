@@ -1,5 +1,5 @@
 version: "4.1"
-name: freertos
+name: lvgl
 type: ARM
 deviceName: null
 packDir: null
@@ -39,6 +39,9 @@ targets:
         - Middlewares/Third_Party/FreeRTOS/Source/include
         - Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
         - Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+        - LVGL
+        - LVGL/examples/porting
+        - LVGL/src
       libList: []
     excludeList:
       - Drivers/BSP/bsp_lcd/lcd_ex.c

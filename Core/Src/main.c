@@ -39,6 +39,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include <stdio.h>
+#include "lvgl.h"
+#include "lv_port_disp.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

@@ -64,6 +64,7 @@ static osTimerId_t led_timer = NULL;
 
 #define EVENT_WIFI_CONNECTED   (1 << 0)
 #define EVENT_TIME_SYNCED      (1 << 1)
+#define EVENT_MAIN_PAGE_READY  (1 << 2)
 
 #define DEBUG_ENABLED  1
 
@@ -221,6 +222,12 @@ uint8_t wifi_is_ready(void)
     return (osEventFlagsGet(app_events) & EVENT_WIFI_CONNECTED) != 0;
 }
 
+uint8_t main_page_is_ready(void)
+{
+    if (app_events == NULL) return 0;
+    return (osEventFlagsGet(app_events) & EVENT_MAIN_PAGE_READY) != 0;
+}
+
 void lcd_lock(void)
 {
     if (lcd_mutex != NULL)
@@ -272,6 +279,7 @@ void StartWifiTask(void *argument)
     
     main_page_display();
     
+    osEventFlagsSet(app_events, EVENT_MAIN_PAGE_READY);
     DEBUG_PRINTF("[WIFI_TASK] Main page displayed, entering monitor loop\n");
     
     uint8_t disconnect_count = 0;
@@ -368,7 +376,9 @@ void StartSensorTask(void *argument)
 {
     DEBUG_PRINTF("[SENSOR_TASK] Starting...\n");
     
-    vTaskDelay(pdMS_TO_TICKS(3000));
+    DEBUG_PRINTF("[SENSOR_TASK] Waiting for main page ready...\n");
+    osEventFlagsWait(app_events, EVENT_MAIN_PAGE_READY, osFlagsWaitAll, osWaitForever);
+    DEBUG_PRINTF("[SENSOR_TASK] Main page ready, starting sensor monitoring\n");
     
     static uint8_t last_temp = 0;
     static uint8_t last_humid = 0;
