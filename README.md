@@ -8,7 +8,7 @@
 
 ### 📺 功能演示 (Demo)
 
-> **[🎬 点击观看：演示视频 (本地 MP4)](asset/demo.mp4)**
+> **[🎬 点击观看：演示视频 (本地 MP4)](Project/asset/demo.mp4)**
 
 ## 硬件平台
 
