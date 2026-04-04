@@ -1,7 +1,12 @@
 #include "lv_port_indev.h"
+#include <stdbool.h>
+#include "touch.h"
+#include "lcd.h"
 #include "bsp_key.h"
 
 static lv_indev_t * encoder_indev;
+static lv_indev_t * touch_indev;
+
 static int32_t encoder_diff;
 static lv_indev_state_t encoder_state;
 
@@ -68,16 +73,48 @@ static void encoder_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
     last_key_state = current_state;
 }
 
+static void touchpad_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
+{
+    static lv_coord_t last_x = 0;
+    static lv_coord_t last_y = 0;
+
+    tp_dev.scan(0);
+
+    if (tp_dev.sta & TP_PRES_DOWN) {
+        data->state = LV_INDEV_STATE_PR;
+        last_x = tp_dev.x[0];
+        last_y = tp_dev.y[0];
+    } else {
+        data->state = LV_INDEV_STATE_REL;
+    }
+
+    data->point.x = last_x;
+    data->point.y = last_y;
+}
+
 void lv_port_indev_init(void)
 {
-    static lv_indev_drv_t indev_drv;
-    lv_indev_drv_init(&indev_drv);
-    indev_drv.type = LV_INDEV_TYPE_ENCODER;
-    indev_drv.read_cb = encoder_read;
-    encoder_indev = lv_indev_drv_register(&indev_drv);
+    tp_init();
+
+    static lv_indev_drv_t indev_drv_encoder;
+    lv_indev_drv_init(&indev_drv_encoder);
+    indev_drv_encoder.type = LV_INDEV_TYPE_ENCODER;
+    indev_drv_encoder.read_cb = encoder_read;
+    encoder_indev = lv_indev_drv_register(&indev_drv_encoder);
+
+    static lv_indev_drv_t indev_drv_touch;
+    lv_indev_drv_init(&indev_drv_touch);
+    indev_drv_touch.type = LV_INDEV_TYPE_POINTER;
+    indev_drv_touch.read_cb = touchpad_read;
+    touch_indev = lv_indev_drv_register(&indev_drv_touch);
 }
 
 lv_indev_t * lv_port_get_encoder_indev(void)
 {
     return encoder_indev;
+}
+
+lv_indev_t * lv_port_get_touch_indev(void)
+{
+    return touch_indev;
 }

@@ -4,7 +4,7 @@
  * @LastEditors: langhz666 3204498297@qq.com
  * @LastEditTime: 2026-02-19 20:08:54
  * @FilePath: \lvgl\APP\app.h
- * @Description: ÕâÊÇÄ¬ÈÏÉèÖÃ,ÇëÉèÖÃ`customMade`, ´ò¿ªkoroFileHeader²é¿´ÅäÖÃ ½øÐÐÉèÖÃ: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @Description: ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½`customMade`, ï¿½ï¿½koroFileHeaderï¿½é¿´ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 #ifndef __APP_H__
 #define __APP_H__
@@ -13,7 +13,7 @@
 #define WIFI_SSID   "iQOO Neo8 Pro"
 #define WIFI_PASSWD "lhz19719937532"
 
-void wifi_init(void);
+uint8_t wifi_init(void);
 void wifi_wait_connect(void);
 
 void main_loop_init(void);
@@ -21,6 +21,9 @@ void main_loop(void);
 
 void lcd_lock(void);
 void lcd_unlock(void);
+
+void esp_lock(void);
+void esp_unlock(void);
 
 uint8_t wifi_is_ready(void);
 uint8_t time_is_synced(void);

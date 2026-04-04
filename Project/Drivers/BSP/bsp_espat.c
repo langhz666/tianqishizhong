@@ -2,22 +2,15 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include "stm32f4xx_hal.h" // 请确保这里对应你的芯片型号，如 F1 则是 stm32f1xx_hal.h
+#include "stm32f4xx_hal.h"
 #include "bsp_espat.h"
-
-// 调试开关：1开启printf调试日志，0关闭
-#define ESP_AT_DEBUG    0
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
-/* * 引用外部定义的串口句柄。
- * 请确保在 main.c 中定义了 huart2 并完成了初始化。
- */
 extern UART_HandleTypeDef huart2;
+extern void esp_lock(void);
+extern void esp_unlock(void);
 
-/* * 【关键修复】加上括号！
- * 修复了优先级问题：(&huart2)->Instance 才是合法的
- */
 #define ESP_UART_HANDLE (&huart2)
 
 typedef enum
@@ -43,49 +36,34 @@ static const at_ack_match_t at_ack_matches[] =
     {AT_ACK_READY, "ready\r\n"},
 };
 
-static char rxbuf[2048]; // 接收缓冲区
+static char rxbuf[2048];
 
-// 内部函数声明
 static void esp_at_usart_write(const char *data);
 
-/* * 底层接收函数（核心修复部分）
- * 增加了清除 ORE (Overrun Error) 的逻辑，防止高波特率下死锁
- */
 static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
 {
     uint32_t rxlen = 0;
-    // 【修复】删除了未使用的 line 变量，消除警告
     uint32_t start = HAL_GetTick();
     
-    // 清空缓冲区
     memset(rxbuf, 0, sizeof(rxbuf));
     
     while (rxlen < sizeof(rxbuf) - 1)
     {
-        // 1. 关键修复：检查并清除 ORE 溢出错误标志
-        // 如果数据来得太快，RXNE还没处理完，ORE就会置位，导致RXNE不再触发
         if(__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_ORE))
         {
             __HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
-            // 读取一次数据寄存器，抛弃错误数据
             (void)ESP_UART_HANDLE->Instance->DR; 
         }
 
-        // 2. 检查是否有新数据 (RXNE)
         if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
         {
-            // 读取数据
             uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
-            
             rxbuf[rxlen++] = data;
             
-            // 每次遇到换行符，检查一次是否匹配关键词
             if (rxbuf[rxlen - 1] == '\n')
             {
-                // 遍历关键词表
                 for (uint32_t i = 0; i < ARRAY_SIZE(at_ack_matches); i++)
                 {
-                    // 使用 strstr 查找子串
                     if (strstr(rxbuf, at_ack_matches[i].string) != NULL)
                     {
                         return at_ack_matches[i].ack;
@@ -95,7 +73,6 @@ static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
         }
         else
         {
-            // 3. 超时检查
             if ((HAL_GetTick() - start) >= timeout)
             {
                 return AT_ACK_NONE;
@@ -106,7 +83,6 @@ static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
     return AT_ACK_NONE;
 }
 
-/* 底层发送函数 */
 static void esp_at_usart_write(const char *data)
 {
     if (data && *data)
@@ -118,54 +94,45 @@ static void esp_at_usart_write(const char *data)
     HAL_UART_Transmit(ESP_UART_HANDLE, newline, 2, 100);
 }
 
-/* 等待特定响应（主要是 ready） */
 bool esp_at_wait_ready(uint32_t timeout)
 {
-    // 复用接收逻辑，等待 "ready"
     return esp_at_usart_wait_receive(timeout) == AT_ACK_READY;
 }
 
-/* 发送指令并等待 OK */
 bool esp_at_write_command(const char *command, uint32_t timeout)
 {
-#if ESP_AT_DEBUG
-    printf("[CMD] >> %s\n", command);
-#endif
-
     esp_at_usart_write(command);
     at_ack_t ack = esp_at_usart_wait_receive(timeout);
-
-#if ESP_AT_DEBUG
-    if(ack == AT_ACK_OK) printf("[ACK] << OK\n");
-    else if(ack == AT_ACK_ERROR) printf("[ACK] << ERROR\n");
-    else printf("[ACK] << TIMEOUT/OTHER\n");
-#endif
-
     return ack == AT_ACK_OK;
 }
 
-/* 获取最后一次响应的缓冲区内容 */
+bool esp_at_write_command_locked(const char *command, uint32_t timeout)
+{
+    esp_lock();
+    bool result = esp_at_write_command(command, timeout);
+    esp_unlock();
+    return result;
+}
+
 const char *esp_at_get_response(void)
 {
     return rxbuf;
 }
 
-/* * 模块初始化函数（修复了初始化逻辑）
- */
 bool esp_at_init(void)
 {
     uint32_t start;
     uint32_t rxlen;
 
-    // 清除可能存在的错误标志
     __HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
     __HAL_UART_CLEAR_NEFLAG(ESP_UART_HANDLE);
     __HAL_UART_CLEAR_FEFLAG(ESP_UART_HANDLE);
 
-    // 尝试不同的波特率
-    const uint32_t baud_rates[] = {115200, 9600, 57600, 38400, 74880, 230400};
+    HAL_Delay(5000);
+
+    const uint32_t baud_rates[] = {115200};
     
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 1; i++)
     {
         huart2.Init.BaudRate = baud_rates[i];
         if (HAL_UART_Init(&huart2) != HAL_OK)
@@ -174,21 +141,37 @@ bool esp_at_init(void)
         }
         
         memset(rxbuf, 0, sizeof(rxbuf));
+        start = HAL_GetTick();
+        while ((HAL_GetTick() - start) < 1000)
+        {
+            if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+            {
+                (void)ESP_UART_HANDLE->Instance->DR;
+            }
+        }
+        
         esp_at_usart_write("AT");
         
         start = HAL_GetTick();
         rxlen = 0;
         
-        while ((HAL_GetTick() - start) < 1000 && rxlen < sizeof(rxbuf) - 1)
+        while ((HAL_GetTick() - start) < 3000 && rxlen < sizeof(rxbuf) - 1)
         {
             if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
             {
                 uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
-                rxbuf[rxlen++] = data;
+                if (rxlen < sizeof(rxbuf) - 1) {
+                    rxbuf[rxlen++] = data;
+                }
             }
         }
         
         if (strstr((char*)rxbuf, "OK") != NULL)
+        {
+            goto baud_found;
+        }
+        
+        if (strstr((char*)rxbuf, "ERROR") != NULL)
         {
             goto baud_found;
         }
@@ -202,7 +185,7 @@ baud_found:
     
     memset(rxbuf, 0, sizeof(rxbuf));
     start = HAL_GetTick();
-    while ((HAL_GetTick() - start) < 1000)
+    while ((HAL_GetTick() - start) < 3000)
     {
         if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
         {
@@ -210,15 +193,17 @@ baud_found:
         }
     }
     
-    if (!esp_at_write_command("AT", 1000))
+    for (int retry = 0; retry < 10; retry++)
     {
-        HAL_Delay(1000);
-        if (!esp_at_write_command("AT", 1000))
+        if (esp_at_write_command("AT", 3000))
         {
-            return false;
+            goto at_ok;
         }
+        HAL_Delay(2000);
     }
+    return false;
     
+at_ok:
     esp_at_write_command("ATE0", 500);
     
     return true;
@@ -229,7 +214,6 @@ bool esp_at_wifi_init(void)
     return esp_at_write_command("AT+CWMODE=1", 2000);
 }
 
-/* 连接 WiFi (增加了缓冲区安全检查) */
 bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
 {
     if (ssid == NULL || pwd == NULL)
@@ -252,28 +236,11 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
     return esp_at_write_command(cmd, 20000);
 }
 
-// --- 以下是解析相关辅助函数 ---
-
-static bool parse_cwstate_response(const char *response, esp_wifi_info_t *info)
-{
-    response = strstr(response, "+CWSTATE:");
-    if (response == NULL) return false;
-    
-    int wifi_state;
-    // +CWSTATE:2,"SSID"
-    if (sscanf(response, "+CWSTATE:%d,\"%63[^\"]", &wifi_state, info->ssid) != 2)
-        return false;
-    
-    info->connected = (wifi_state == 2);
-    return true;
-}
-
 static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 {
     response = strstr(response, "+CWJAP:");
     if (response == NULL) return false;
     
-    // +CWJAP:"SSID","MAC",...
     if (sscanf(response, "+CWJAP:\"%63[^\"]\",\"%17[^\"]\",%d,%d", 
                info->ssid, info->bssid, &info->channel, &info->rssi) != 4)
         return false;
@@ -283,16 +250,24 @@ static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 
 bool esp_at_get_wifi_info(esp_wifi_info_t *info)
 {
-    // 查询状态
-    if (!esp_at_write_command("AT+CWSTATE?", 2000)) return false;
-    if (!parse_cwstate_response(esp_at_get_response(), info)) return false;
-    
-    // 如果已连接，查询详细信息
-    if (info->connected) {
-        if (!esp_at_write_command("AT+CWJAP?", 2000)) return false;
-        if (!parse_cwjap_response(esp_at_get_response(), info)) return false;
+    esp_lock();
+    if (!esp_at_write_command("AT+CWJAP?", 2000))
+    {
+        esp_unlock();
+        return false;
     }
-    return true;
+    
+    const char *resp = esp_at_get_response();
+    
+    if (parse_cwjap_response(resp, info))
+    {
+        info->connected = true;
+        esp_unlock();
+        return true;
+    }
+    
+    esp_unlock();
+    return false;
 }
 
 bool wifi_is_connected(void)
@@ -304,8 +279,6 @@ bool wifi_is_connected(void)
     }
     return false;
 }
-
-// --- SNTP 时间相关 ---
 
 bool esp_at_sntp_init(void)
 {
@@ -370,34 +343,24 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
     return true;
 }
 
-// --- HTTP 相关 ---
-
 const char *esp_at_http_get(const char *url)
 {
     if(strlen(url) > 512) {
-        printf("[HTTP] URL too long\n");
         return NULL;
     }
 
     char cmd[600];
     int ret = snprintf(cmd, sizeof(cmd), "AT+HTTPCLIENT=2,1,\"%s\",,,2", url);
     if (ret < 0 || ret >= sizeof(cmd)) {
-        printf("[HTTP] Command buffer overflow\n");
         return NULL;
     }
-
-    printf("[HTTP] Sending: %s\n", cmd);
     
     bool ok = esp_at_write_command(cmd, 15000);
     
     if (!ok)
     {
-        printf("[HTTP] Command failed\n");
         return NULL;
     }
     
-    const char *response = esp_at_get_response();
-    printf("[HTTP] Response length: %d\n", strlen(response));
-    
-    return response;
+    return esp_at_get_response();
 }

@@ -32,6 +32,7 @@ targets:
         - Drivers/CMSIS/Include
         - Drivers/BSP
         - Drivers/BSP/bsp_lcd
+        - Drivers/BSP/TOUCH
         - APP/font
         - APP/imag
         - APP/weather

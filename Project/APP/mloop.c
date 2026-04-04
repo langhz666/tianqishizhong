@@ -40,38 +40,57 @@ static void time_sync(void);
 
 void main_loop_init(void)
 {
-    main_page_display();
+    splash_set_progress(10, "Initializing...");
+    HAL_Delay(200);
     
-    // 【新增 1】移植丢失的初始化逻辑
     printf("[SYS] ESP Init...\n");
     if (!esp_at_init()) {
         printf("[ERR] ESP Init failed\n");
+        splash_set_progress(20, "WiFi init failed");
+    } else {
+        splash_set_progress(20, "WiFi module OK");
     }
-
-    // 【新增 2】移植丢失的连接 WiFi 逻辑
-    // 注意：这里的 SSID 和密码根据你的实际情况填写，或者做成宏定义
+    HAL_Delay(300);
+    
+    splash_set_progress(50, "Loading...");
+    HAL_Delay(300);
+    
+    splash_set_progress(80, "Almost ready...");
+    HAL_Delay(200);
+    
+    splash_set_progress(100, "Welcome!");
+    HAL_Delay(500);
+    
+    splash_screen_end();
+    
+    wifi_page_display();
+    
     printf("[SYS] Connecting WiFi...\n");
-    main_page_redraw_wifi_ssid("Connecting..."); // 可以在屏幕提示正在连接
+    wifi_page_set_status("Connecting...", false);
+    HAL_Delay(500);
     
     if (esp_at_connect_wifi("iQOO Neo8 Pro", "lhz19719937532", NULL)) {
         printf("[SYS] WiFi Connected\n");
-        main_page_redraw_wifi_ssid("Connected");
+        wifi_page_set_status("Connected!", true);
+        HAL_Delay(1000);
     } else {
         printf("[ERR] WiFi Connect failed\n");
-        main_page_redraw_wifi_ssid("Connect Fail");
+        wifi_page_set_status("Connect failed", false);
+        HAL_Delay(2000);
     }
-
-    // 【新增 3】SNTP 初始化
+    
+    wifi_page_set_status("Syncing time...", true);
     esp_at_sntp_init();
-
-    // 初始化时间戳
+    HAL_Delay(500);
+    
+    main_page_display();
+    
     last_time_sync_tick = 0;
     last_wifi_update_tick = 0;
     last_time_update_tick = 0;
     last_inner_update_tick = 0;
     last_outdoor_update_tick = 0;
     
-    // 首次启动时立即同步网络时间
     time_sync();
 }
 

@@ -63,6 +63,7 @@ extern int __io_putchar(int ch);
 osMutexId_t lcd_mutex = NULL;
 static osEventFlagsId_t app_events = NULL;
 static osTimerId_t led_timer = NULL;
+static osMutexId_t esp_mutex = NULL;
 
 #define EVENT_WIFI_CONNECTED   (1 << 0)
 #define EVENT_TIME_SYNCED      (1 << 1)
@@ -75,6 +76,54 @@ static osTimerId_t led_timer = NULL;
 #else
 #define DEBUG_PRINTF(fmt, ...)
 #endif
+
+/* WiFi Task */
+osThreadId_t wifiTaskHandle;
+const osThreadAttr_t wifiTask_attributes = {
+  .name = "wifiTask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Time Task */
+osThreadId_t timeTaskHandle;
+const osThreadAttr_t timeTask_attributes = {
+  .name = "timeTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Sensor Task */
+osThreadId_t sensorTaskHandle;
+const osThreadAttr_t sensorTask_attributes = {
+  .name = "sensorTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Weather Task */
+osThreadId_t weatherTaskHandle;
+const osThreadAttr_t weatherTask_attributes = {
+    .name = "weatherTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityBelowNormal,
+};
+
+/* LVGL Task */
+osThreadId_t lvglTaskHandle;
+const osThreadAttr_t lvglTask_attributes = {
+    .name = "lvglTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t) osPriorityNormal,
+};
+
+/* Touch Test Task */
+osThreadId_t touchTestTaskHandle;
+const osThreadAttr_t touchTestTask_attributes = {
+    .name = "touchTestTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t) osPriorityAboveNormal,
+};
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -84,43 +133,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 
-/* USER CODE BEGIN Definitions */
-osThreadId_t wifiTaskHandle;
-const osThreadAttr_t wifiTask_attributes = {
-  .name = "wifiTask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal,
-};
-
-osThreadId_t timeTaskHandle;
-const osThreadAttr_t timeTask_attributes = {
-  .name = "timeTask",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-osThreadId_t sensorTaskHandle;
-const osThreadAttr_t sensorTask_attributes = {
-  .name = "sensorTask",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-osThreadId_t weatherTaskHandle;
-const osThreadAttr_t weatherTask_attributes = {
-    .name = "weatherTask",
-    .stack_size = 512 * 4,
-    .priority = (osPriority_t) osPriorityBelowNormal,
-};
-
-osThreadId_t lvglTaskHandle;
-const osThreadAttr_t lvglTask_attributes = {
-    .name = "lvglTask",
-    .stack_size = 1024 * 4,
-    .priority = (osPriority_t) osPriorityNormal,
-};
-/* USER CODE END Definitions */
-
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 void StartWifiTask(void *argument);
@@ -129,6 +141,7 @@ void StartSensorTask(void *argument);
 void StartWeatherTask(void *argument);
 static void LedTimerCallback(void *argument);
 void StartLvglTask(void *argument);
+void StartTouchTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -147,6 +160,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
   lcd_mutex = osMutexNew(NULL);
+  esp_mutex = osMutexNew(NULL);
   app_events = osEventFlagsNew(NULL);
   /* USER CODE END RTOS_MUTEX */
 
@@ -174,17 +188,13 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  wifiTaskHandle = osThreadNew(StartWifiTask, NULL, &wifiTask_attributes);
-  DEBUG_PRINTF("[FREERTOS] wifiTask created: %p\n", (void*)wifiTaskHandle);
+  touchTestTaskHandle = osThreadNew(StartTouchTestTask, NULL, &touchTestTask_attributes);
+  DEBUG_PRINTF("[FREERTOS] touchTestTask created: %p\n", (void*)touchTestTaskHandle);
   
-  timeTaskHandle = osThreadNew(StartTimeTask, NULL, &timeTask_attributes);
-  DEBUG_PRINTF("[FREERTOS] timeTask created: %p\n", (void*)timeTaskHandle);
-  
-  sensorTaskHandle = osThreadNew(StartSensorTask, NULL, &sensorTask_attributes);
-  DEBUG_PRINTF("[FREERTOS] sensorTask created: %p\n", (void*)sensorTaskHandle);
-  
-  weatherTaskHandle = osThreadNew(StartWeatherTask, NULL, &weatherTask_attributes);
-  DEBUG_PRINTF("[FREERTOS] weatherTask created: %p\n", (void*)weatherTaskHandle);
+  /* wifiTaskHandle = osThreadNew(StartWifiTask, NULL, &wifiTask_attributes); */
+  /* timeTaskHandle = osThreadNew(StartTimeTask, NULL, &timeTask_attributes); */
+  /* sensorTaskHandle = osThreadNew(StartSensorTask, NULL, &sensorTask_attributes); */
+  /* weatherTaskHandle = osThreadNew(StartWeatherTask, NULL, &weatherTask_attributes); */
   
   lvglTaskHandle = osThreadNew(StartLvglTask, NULL, &lvglTask_attributes);
   DEBUG_PRINTF("[FREERTOS] lvglTask created: %p\n", (void*)lvglTaskHandle);
@@ -257,15 +267,46 @@ void lcd_unlock(void)
     }
 }
 
+void esp_lock(void)
+{
+    if (esp_mutex != NULL)
+    {
+        osMutexAcquire(esp_mutex, osWaitForever);
+    }
+}
+
+void esp_unlock(void)
+{
+    if (esp_mutex != NULL)
+    {
+        osMutexRelease(esp_mutex);
+    }
+}
+
 void StartWifiTask(void *argument)
 {
     DEBUG_PRINTF("[WIFI_TASK] Starting...\n");
     
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(5000));
     
     wifi_page_display();
     
-    wifi_init();
+    DEBUG_PRINTF("[WIFI_TASK] Initializing WiFi...\n");
+    
+    uint8_t init_retry = 0;
+    while (!wifi_init() && init_retry < 3)
+    {
+        init_retry++;
+        DEBUG_PRINTF("[WIFI_TASK] WiFi init failed, retry %d/3...\n", init_retry);
+        vTaskDelay(pdMS_TO_TICKS(3000));
+    }
+    
+    if (init_retry >= 3)
+    {
+        DEBUG_PRINTF("[WIFI_TASK] WiFi init failed after 3 retries\n");
+        error_page_display("wireless init failed");
+        for (;;){ vTaskDelay(pdMS_TO_TICKS(1000)); }
+    }
     
     DEBUG_PRINTF("[WIFI_TASK] Connecting to %s...\n", WIFI_SSID);
     
@@ -273,14 +314,16 @@ void StartWifiTask(void *argument)
     {
         if (esp_at_connect_wifi(WIFI_SSID, WIFI_PASSWD, NULL))
         {
-            DEBUG_PRINTF("[WIFI_TASK] WiFi Connected\n");
-            osEventFlagsSet(app_events, EVENT_WIFI_CONNECTED);
+            DEBUG_PRINTF("[WIFI_TASK] WiFi Connected, waiting for network stable...\n");
+            vTaskDelay(pdMS_TO_TICKS(2000));
             
             esp_wifi_info_t wifi = {0};
-            if (esp_at_get_wifi_info(&wifi) && wifi.connected)
+            if (esp_at_get_wifi_info(&wifi))
             {
-                DEBUG_PRINTF("[WIFI_TASK] SSID: %s\n", wifi.ssid);
+                DEBUG_PRINTF("[WIFI_TASK] WiFi info: connected=%d, SSID=%s\n", wifi.connected, wifi.ssid);
             }
+            
+            osEventFlagsSet(app_events, EVENT_WIFI_CONNECTED);
             break;
         }
         else
@@ -335,6 +378,8 @@ void StartTimeTask(void *argument)
     DEBUG_PRINTF("[TIME_TASK] Waiting for WiFi...\n");
     osEventFlagsWait(app_events, EVENT_WIFI_CONNECTED, osFlagsWaitAll, osWaitForever);
     
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    
     DEBUG_PRINTF("[TIME_TASK] WiFi connected, syncing time...\n");
     
     for (;;)
@@ -342,7 +387,11 @@ void StartTimeTask(void *argument)
         if (!time_is_synced())
         {
             esp_date_time_t esp_date = {0};
-            if (esp_at_sntp_get_time(&esp_date) && esp_date.year >= 2020)
+            esp_lock();
+            bool ok = esp_at_sntp_get_time(&esp_date);
+            esp_unlock();
+            
+            if (ok && esp_date.year >= 2020)
             {
                 DEBUG_PRINTF("[TIME_TASK] SNTP: %04u-%02u-%02u %02u:%02u:%02u\n",
                     esp_date.year, esp_date.month, esp_date.day,
@@ -363,8 +412,8 @@ void StartTimeTask(void *argument)
             }
             else
             {
-                DEBUG_PRINTF("[TIME_TASK] SNTP failed, retry in 2s...\n");
-                vTaskDelay(pdMS_TO_TICKS(2000));
+                DEBUG_PRINTF("[TIME_TASK] SNTP failed, retry in 5s...\n");
+                vTaskDelay(pdMS_TO_TICKS(5000));
                 continue;
             }
         }
@@ -392,6 +441,8 @@ void StartSensorTask(void *argument)
     DEBUG_PRINTF("[SENSOR_TASK] Waiting for main page ready...\n");
     osEventFlagsWait(app_events, EVENT_MAIN_PAGE_READY, osFlagsWaitAll, osWaitForever);
     DEBUG_PRINTF("[SENSOR_TASK] Main page ready, starting sensor monitoring\n");
+    
+    vTaskDelay(pdMS_TO_TICKS(2000));
     
     static uint8_t last_temp = 0;
     static uint8_t last_humid = 0;
@@ -432,7 +483,7 @@ void StartWeatherTask(void *argument)
     DEBUG_PRINTF("[WEATHER_TASK] Waiting for WiFi...\n");
     osEventFlagsWait(app_events, EVENT_WIFI_CONNECTED, osFlagsWaitAll, osWaitForever);
     
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    vTaskDelay(pdMS_TO_TICKS(5000));
     
     DEBUG_PRINTF("[WEATHER_TASK] WiFi connected, fetching weather...\n");
     
@@ -443,7 +494,9 @@ void StartWeatherTask(void *argument)
     {
         DEBUG_PRINTF("[WEATHER_TASK] Fetching weather...\n");
         
+        esp_lock();
         const char *response = esp_at_http_get(weather_url);
+        esp_unlock();
         
         if (response != NULL)
         {
@@ -492,7 +545,6 @@ void StartWeatherTask(void *argument)
 void StartLvglTask(void *argument)
 {
     DEBUG_PRINTF("[LVGL_TASK] Starting...\n");
-    
     for (;;)
     {
         lv_task_handler();

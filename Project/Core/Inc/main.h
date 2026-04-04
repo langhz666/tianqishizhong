@@ -63,6 +63,8 @@ void Error_Handler(void);
 #define KEY_1_GPIO_Port GPIOE
 #define KEY_0_Pin GPIO_PIN_4
 #define KEY_0_GPIO_Port GPIOE
+#define T_CS_Pin GPIO_PIN_13
+#define T_CS_GPIO_Port GPIOC
 #define DHT11_DQ_Pin GPIO_PIN_6
 #define DHT11_DQ_GPIO_Port GPIOF
 #define BEEP_Pin GPIO_PIN_8
@@ -73,6 +75,14 @@ void Error_Handler(void);
 #define LED1_GPIO_Port GPIOF
 #define KEY_UP_Pin GPIO_PIN_0
 #define KEY_UP_GPIO_Port GPIOA
+#define T_CLK_Pin GPIO_PIN_0
+#define T_CLK_GPIO_Port GPIOB
+#define T_PEN_Pin GPIO_PIN_1
+#define T_PEN_GPIO_Port GPIOB
+#define T_MISO_Pin GPIO_PIN_2
+#define T_MISO_GPIO_Port GPIOB
+#define T_MOSI_Pin GPIO_PIN_11
+#define T_MOSI_GPIO_Port GPIOF
 #define LCD_BL_Pin GPIO_PIN_15
 #define LCD_BL_GPIO_Port GPIOB
 

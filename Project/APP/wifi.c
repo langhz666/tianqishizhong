@@ -10,41 +10,30 @@
 /**
  * @brief WiFi 硬件和协议栈初始化
  */
-void wifi_init(void)
+uint8_t wifi_init(void)
 {
-    // 1. 初始化 AT 串口底层
     if (!esp_at_init())
     {
         printf("[AT] init failed\n");
-        goto err;
+        return 0;
     }
     printf("[AT] inited\n");
     
-    // 2. 初始化 WiFi 模式 (Station)
     if (!esp_at_wifi_init())
     {
         printf("[WIFI] init failed\n");
-        goto err;
+        return 0;
     }
     printf("[WIFI] inited\n");
     
-    // 3. 初始化 SNTP (网络时间)
     if (!esp_at_sntp_init())
     {
         printf("[SNTP] init failed\n");
-        goto err;
+        return 0;
     }
     printf("[SNTP] inited\n");
     
-    return;
-    
-err:
-    // 初始化失败，显示错误页并死循环
-    error_page_display("wireless init failed");
-    while (1)
-    {
-        HAL_Delay(100); // 加一点延时防止死循环占满总线
-    }
+    return 1;
 }
 
 /**

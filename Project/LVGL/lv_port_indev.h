@@ -9,6 +9,7 @@ extern "C" {
 
 void lv_port_indev_init(void);
 lv_indev_t * lv_port_get_encoder_indev(void);
+lv_indev_t * lv_port_get_touch_indev(void);
 
 #ifdef __cplusplus
 } /*extern "C"*/

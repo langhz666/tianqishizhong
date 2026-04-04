@@ -9,6 +9,8 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 
 void lv_port_disp_init(void)
 {
+    lcd_clear(BLACK);
+
     static lv_disp_draw_buf_t draw_buf;
     static lv_color_t buf1[MY_DISP_HOR_RES * 40];
     static lv_color_t buf2[MY_DISP_HOR_RES * 40];
@@ -28,9 +30,14 @@ void lv_port_disp_init(void)
 
 static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p)
 {
-    lcd_set_window(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1);
+    uint16_t x1 = area->x1;
+    uint16_t y1 = area->y1;
+    uint16_t x2 = area->x2;
+    uint16_t y2 = area->y2;
 
-    uint32_t len = (area->x2 - area->x1 + 1) * (area->y2 - area->y1 + 1);
+    lcd_set_window(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+
+    uint32_t len = (x2 - x1 + 1) * (y2 - y1 + 1);
 
     LCD->LCD_REG = lcddev.wramcmd;
 
