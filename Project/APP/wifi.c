@@ -1,14 +1,40 @@
-#include "main.h"       // å¿…é¡»åŒ…å«ï¼Œç”¨äºè·å– HAL_Delay å’Œ HAL_GetTick
+/**
+ * @file wifi.c
+ * @brief WiFiÁ¬½Ó¹ÜÀíÄ£¿é
+ * 
+ * ±¾ÎÄ¼şÊµÏÖÁËWiFiÄ£¿éµÄ³õÊ¼»¯ºÍÁ¬½Ó¹ÜÀí¹¦ÄÜ£¬°üÀ¨£º
+ * - ESP ATÖ¸ÁîÄ£¿é³õÊ¼»¯
+ * - WiFiÍøÂçÁ¬½Ó
+ * - SNTPÊ±¼äÍ¬²½³õÊ¼»¯
+ * - Á¬½Ó×´Ì¬¼à¿Ø
+ * 
+ * ÒÀÀµ£º
+ * - ESP8266/ESP32 AT¹Ì¼ş
+ * - HAL¿âÑÓÊ±º¯Êı
+ * 
+ * @author Smart Weather Clock Team
+ * @version 1.0.0
+ */
+
+#include "main.h"
 #include <stdio.h>
 #include <string.h>
 
-/* BSP å’Œåº”ç”¨å¤´æ–‡ä»¶ */
-#include "bsp_espat.h"  // æ›¿æ¢åŸæ¥çš„ esp_at.h
-#include "page.h"       // ç”¨äº error_page_display
-#include "app.h"        // ç”¨äº WIFI_SSID å’Œ WIFI_PASSWD å®šä¹‰
+#include "bsp_espat.h"
+#include "page.h"
+#include "app.h"
 
 /**
- * @brief WiFi ç¡¬ä»¶å’Œåè®®æ ˆåˆå§‹åŒ–
+ * @brief WiFiÓ²¼şºÍĞ­ÒéÕ»³õÊ¼»¯
+ * 
+ * @return uint8_t  1: ³õÊ¼»¯³É¹¦  0: ³õÊ¼»¯Ê§°Ü
+ * 
+ * ³õÊ¼»¯Á÷³Ì£º
+ * 1. ESP ATÄ£¿é³õÊ¼»¯£¨´®¿ÚÍ¨ĞÅ¡¢ATÖ¸Áî²âÊÔ£©
+ * 2. WiFiĞ­ÒéÕ»³õÊ¼»¯
+ * 3. SNTPÊ±¼äÍ¬²½·şÎñ³õÊ¼»¯
+ * 
+ * ÈÎºÎÒ»¸ö²½ÖèÊ§°Ü¶¼»áµ¼ÖÂÕû¸ö³õÊ¼»¯Ê§°Ü
  */
 uint8_t wifi_init(void)
 {
@@ -37,39 +63,39 @@ uint8_t wifi_init(void)
 }
 
 /**
- * @brief å‘èµ·è¿æ¥å¹¶ç­‰å¾… (é˜»å¡å¼ï¼Œå¸¦è¶…æ—¶)
+ * @brief ·¢ÆğWiFiÁ¬½Ó²¢µÈ´ı½á¹û£¨×èÈûÊ½£¬´ø³¬Ê±£©
+ * 
+ * ´Ëº¯Êı»á×èÈû³ÌĞòÖ´ĞĞ£¬Ö±µ½Á¬½Ó³É¹¦»ò³¬Ê±£¨10Ãë£©¡£
+ * Á¬½Ó³É¹¦ºó·µ»Ø£¬Á¬½ÓÊ§°ÜÔòÏÔÊ¾´íÎóÒ³Ãæ²¢½øÈëËÀÑ­»·¡£
+ * 
+ * @note WiFi SSIDºÍÃÜÂëÔÚapp.hÖĞ¶¨Òå
+ * @note ³¬Ê±ºó»áµ÷ÓÃerror_page_displayÏÔÊ¾´íÎóĞÅÏ¢
  */
 void wifi_wait_connect(void)
 {
     printf("[WIFI] connecting to %s...\n", WIFI_SSID);
     
-    // å‘é€è¿æ¥å‘½ä»¤
-    // æ³¨æ„ï¼šè¯·ç¡®ä¿ app.h ä¸­å®šä¹‰äº† WIFI_SSID å’Œ WIFI_PASSWD
     esp_at_connect_wifi(WIFI_SSID, WIFI_PASSWD, NULL);
     
-    // è®°å½•å¼€å§‹æ—¶é—´
     uint32_t start_tick = HAL_GetTick();
     
-    // å¾ªç¯æ£€æŸ¥è¿æ¥çŠ¶æ€ï¼Œè¶…æ—¶æ—¶é—´ 10ç§’ (10000ms)
     while (HAL_GetTick() - start_tick < 10000)
     {
-        HAL_Delay(500); // æ¯ 500ms æ£€æŸ¥ä¸€æ¬¡
+        HAL_Delay(500);
         
         esp_wifi_info_t wifi = { 0 };
         
-        // è·å–ä¿¡æ¯å¹¶åˆ¤æ–­æ˜¯å¦å·²è¿æ¥
         if (esp_at_get_wifi_info(&wifi) && wifi.connected)
         {
             printf("[WIFI] Connected Successfully!\n");
             printf("[WIFI] SSID: %s, BSSID: %s, Channel: %d, RSSI: %d\n",
                 wifi.ssid, wifi.bssid, wifi.channel, wifi.rssi);
-            return; // è¿æ¥æˆåŠŸï¼Œé€€å‡ºå‡½æ•°
+            return;
         }
         
         printf("[WIFI] waiting...\n");
     }
     
-    // è¶…æ—¶å¤„ç†
     printf("[WIFI] Connection Timeout\n");
     error_page_display("wireless connect failed");
     

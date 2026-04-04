@@ -1,3 +1,34 @@
+/**
+ * @file weather.c
+ * @brief 天气数据解析模块
+ * 
+ * 本文件实现了对心知天气(Seniverse)API返回的JSON数据进行解析的功能。
+ * 解析后的数据存储在weather_info_t结构体中，供主程序使用。
+ * 
+ * 心知天气Daily API返回格式示例：
+ * {
+ *   "results": [{
+ *     "location": {
+ *       "name": "北京",
+ *       "path": "北京,北京,中国"
+ *     },
+ *     "daily": [{
+ *       "date": "2025-04-04",
+ *       "text_day": "晴",
+ *       "code_day": "0",
+ *       "high": "26",
+ *       "low": "15",
+ *       "wind_direction": "北",
+ *       "wind_speed": "15.0",
+ *       "humidity": "60"
+ *     }]
+ *   }]
+ * }
+ * 
+ * @author Smart Weather Clock Team
+ * @version 1.2.0
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -5,6 +36,23 @@
 #include <stdio.h>
 #include "weather.h"
 
+/**
+ * @brief 解析心知天气API的JSON响应
+ * 
+ * @param response  JSON响应字符串指针
+ * @param info      输出的天气信息结构体指针
+ * @return true     解析成功
+ * @return false    解析失败（输入无效或格式错误）
+ * 
+ * 解析流程：
+ * 1. 检查输入有效性
+ * 2. 定位"results"节点
+ * 3. 解析location信息（城市名称、路径）
+ * 4. 解析daily信息（天气描述、代码、温度、湿度、风速）
+ * 
+ * @note 使用简单的字符串匹配而非完整的JSON解析器，
+ *       适用于资源受限的嵌入式环境
+ */
 bool parse_seniverse_response(const char *response, weather_info_t *info)
 {
 	if (response == NULL || strlen(response) == 0)
@@ -36,37 +84,56 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
 		sscanf(loaction_path_response, "\"path\": \"%128[^\"]\"", info->loaction);
 	}
 	
-	const char *now_response = strstr(response, "\"now\":");
-	if (now_response == NULL)
+	const char *daily_response = strstr(response, "\"daily\":");
+	if (daily_response == NULL)
 	{
 		return false;
 	}
 	
-	const char *now_text_response = strstr(now_response, "\"text\":");
-	if (now_text_response)
+	const char *daily_text_response = strstr(daily_response, "\"text_day\":");
+	if (daily_text_response)
 	{
-		sscanf(now_text_response, "\"text\": \"%15[^\"]\"", info->weather);
+		sscanf(daily_text_response, "\"text_day\": \"%15[^\"]\"", info->weather);
 	}
 	
-	const char *now_code_response = strstr(now_response, "\"code\":");
-	if (now_code_response)
+	const char *daily_code_response = strstr(daily_response, "\"code_day\":");
+	if (daily_code_response)
 	{
-		sscanf(now_code_response, "\"code\": \"%d\"", &info->weather_code);
+		sscanf(daily_code_response, "\"code_day\": \"%d\"", &info->weather_code);
 	}
 	
-	char temperature_str[16] = { 0 };
-	const char *now_temperature_response = strstr(now_response, "\"temperature\":");
-	if (now_temperature_response)
+	char high_str[16] = { 0 };
+	const char *daily_high_response = strstr(daily_response, "\"high\":");
+	if (daily_high_response)
 	{
-		now_temperature_response += strlen("\"temperature\":\"");
-		for (int i = 0; i < 15 && now_temperature_response[i] != '\0' && now_temperature_response[i] != '"'; i++)
+		sscanf(daily_high_response, "\"high\": \"%15[^\"]\"", high_str);
+		if (strlen(high_str) > 0)
 		{
-			temperature_str[i] = now_temperature_response[i];
+			info->temperature = atoi(high_str);
 		}
-		if (strlen(temperature_str) > 0)
+	}
+	
+	const char *daily_humidity_response = strstr(daily_response, "\"humidity\":");
+	if (daily_humidity_response)
+	{
+		sscanf(daily_humidity_response, "\"humidity\": \"%d\"", &info->humidity);
+	}
+	
+	char wind_speed_str[16] = { 0 };
+	const char *daily_wind_speed_response = strstr(daily_response, "\"wind_speed\":");
+	if (daily_wind_speed_response)
+	{
+		sscanf(daily_wind_speed_response, "\"wind_speed\": \"%15[^\"]\"", wind_speed_str);
+		if (strlen(wind_speed_str) > 0)
 		{
-			info->temperature = atoi(temperature_str);
+			info->wind_speed = atoi(wind_speed_str);
 		}
+	}
+	
+	const char *daily_wind_direction_response = strstr(daily_response, "\"wind_direction\":");
+	if (daily_wind_direction_response)
+	{
+		sscanf(daily_wind_direction_response, "\"wind_direction\": \"%7[^\"]\"", info->wind_direction);
 	}
 	
 	return true;

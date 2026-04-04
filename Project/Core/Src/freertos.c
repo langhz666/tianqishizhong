@@ -116,14 +116,6 @@ const osThreadAttr_t lvglTask_attributes = {
     .stack_size = 1024 * 4,
     .priority = (osPriority_t) osPriorityNormal,
 };
-
-/* Touch Test Task */
-osThreadId_t touchTestTaskHandle;
-const osThreadAttr_t touchTestTask_attributes = {
-    .name = "touchTestTask",
-    .stack_size = 1024 * 4,
-    .priority = (osPriority_t) osPriorityAboveNormal,
-};
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -141,7 +133,6 @@ void StartSensorTask(void *argument);
 void StartWeatherTask(void *argument);
 static void LedTimerCallback(void *argument);
 void StartLvglTask(void *argument);
-void StartTouchTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -188,13 +179,10 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  touchTestTaskHandle = osThreadNew(StartTouchTestTask, NULL, &touchTestTask_attributes);
-  DEBUG_PRINTF("[FREERTOS] touchTestTask created: %p\n", (void*)touchTestTaskHandle);
-  
-  /* wifiTaskHandle = osThreadNew(StartWifiTask, NULL, &wifiTask_attributes); */
-  /* timeTaskHandle = osThreadNew(StartTimeTask, NULL, &timeTask_attributes); */
-  /* sensorTaskHandle = osThreadNew(StartSensorTask, NULL, &sensorTask_attributes); */
-  /* weatherTaskHandle = osThreadNew(StartWeatherTask, NULL, &weatherTask_attributes); */
+  wifiTaskHandle = osThreadNew(StartWifiTask, NULL, &wifiTask_attributes);
+  timeTaskHandle = osThreadNew(StartTimeTask, NULL, &timeTask_attributes);
+  sensorTaskHandle = osThreadNew(StartSensorTask, NULL, &sensorTask_attributes);
+  weatherTaskHandle = osThreadNew(StartWeatherTask, NULL, &weatherTask_attributes);
   
   lvglTaskHandle = osThreadNew(StartLvglTask, NULL, &lvglTask_attributes);
   DEBUG_PRINTF("[FREERTOS] lvglTask created: %p\n", (void*)lvglTaskHandle);
@@ -487,7 +475,7 @@ void StartWeatherTask(void *argument)
     
     DEBUG_PRINTF("[WEATHER_TASK] WiFi connected, fetching weather...\n");
     
-    static const char *weather_url = "http://api.seniverse.com/v3/weather/now.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c";
+    static const char *weather_url = "http://api.seniverse.com/v3/weather/daily.json?key=SMrYk_pYNmh3z37k5&location=Hengyang&language=en&unit=c&days=1";
     static weather_info_t last_weather = {0};
     
     for (;;)
@@ -514,11 +502,14 @@ void StartWeatherTask(void *argument)
                     if (memcmp(&last_weather, &weather, sizeof(weather_info_t)) != 0)
                     {
                         memcpy(&last_weather, &weather, sizeof(weather_info_t));
-                        DEBUG_PRINTF("[WEATHER_TASK] %s, %s, %dC, code=%d\n",
-                            weather.city, weather.weather, weather.temperature, weather.weather_code);
+                        DEBUG_PRINTF("[WEATHER_TASK] %s, %s, %dC, code=%d, humidity=%d%%, wind=%s %d km/h\n",
+                            weather.city, weather.weather, weather.temperature, weather.weather_code,
+                            weather.humidity, weather.wind_direction, weather.wind_speed);
                         
                         main_page_redraw_outdoor_temperature(weather.temperature);
                         main_page_redraw_outdoor_weather_icon(weather.weather_code);
+                        main_page_redraw_outdoor_humidity(weather.humidity);
+                        main_page_redraw_outdoor_wind(weather.wind_speed, weather.wind_direction);
                     }
                 }
                 else
