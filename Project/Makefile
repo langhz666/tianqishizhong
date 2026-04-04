@@ -31,9 +31,33 @@ OPT = -Og
 # Build path
 BUILD_DIR = build
 
-######################################
+#######################################
 # source
-######################################
+#######################################
+
+# Find all LVGL source files (excluding examples, demos, and unused GPU drivers)
+LVGL_SRCS = $(shell find LVGL -name "*.c" \
+  -not -path "LVGL/examples/*" \
+  -not -path "LVGL/demos/*" \
+  -not -path "LVGL/src/draw/sdl/*" \
+  -not -path "LVGL/src/draw/nxp/*" \
+  -not -path "LVGL/src/draw/arm2d/*" \
+  -not -path "LVGL/src/draw/swm341_dma2d/*" \
+  -not -path "LVGL/src/draw/renesas/*" \
+  -not -path "LVGL/src/extra/libs/ffmpeg/*" \
+  -not -path "LVGL/src/extra/libs/freetype/*" \
+  -not -path "LVGL/src/extra/libs/rlottie/*" \
+  -not -path "LVGL/src/extra/libs/tiny_ttf/*" \
+  -not -path "LVGL/src/extra/libs/fsdrv/*" \
+  -not -path "LVGL/src/extra/others/fragment/*" \
+  -not -path "LVGL/src/extra/others/gridnav/*" \
+  -not -path "LVGL/src/extra/others/monkey/*" \
+  -not -path "LVGL/src/extra/others/snapshot/*" \
+  -not -path "LVGL/src/extra/others/imgfont/*" \
+  -not -path "LVGL/src/extra/others/msg/*" \
+  -not -path "LVGL/src/extra/others/ime/*" \
+  | tr '\n' ' ')
+
 # C sources
 C_SOURCES =  \
 Core/Src/main.c \
@@ -80,7 +104,8 @@ Middlewares/Third_Party/FreeRTOS/Source/tasks.c \
 Middlewares/Third_Party/FreeRTOS/Source/timers.c \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c \
-Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
+Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c \
+$(LVGL_SRCS)
 
 # ASM sources
 ASM_SOURCES =  \
@@ -148,7 +173,47 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
--IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+-IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \
+-IDrivers/BSP \
+-IDrivers/BSP/bsp_lcd \
+-IAPP \
+-IAPP/font \
+-IAPP/imag \
+-IAPP/weather \
+-IAPP/page \
+-ILVGL \
+-ILVGL/src \
+-ILVGL/src/core \
+-ILVGL/src/draw \
+-ILVGL/src/draw/sw \
+-ILVGL/src/draw/stm32_dma2d \
+-ILVGL/src/font \
+-ILVGL/src/hal \
+-ILVGL/src/misc \
+-ILVGL/src/widgets \
+-ILVGL/src/extra \
+-ILVGL/src/extra/layouts/flex \
+-ILVGL/src/extra/layouts/grid \
+-ILVGL/src/extra/themes/basic \
+-ILVGL/src/extra/themes/default \
+-ILVGL/src/extra/themes/mono \
+-ILVGL/src/extra/widgets/animimg \
+-ILVGL/src/extra/widgets/calendar \
+-ILVGL/src/extra/widgets/chart \
+-ILVGL/src/extra/widgets/colorwheel \
+-ILVGL/src/extra/widgets/imgbtn \
+-ILVGL/src/extra/widgets/keyboard \
+-ILVGL/src/extra/widgets/led \
+-ILVGL/src/extra/widgets/list \
+-ILVGL/src/extra/widgets/menu \
+-ILVGL/src/extra/widgets/meter \
+-ILVGL/src/extra/widgets/msgbox \
+-ILVGL/src/extra/widgets/span \
+-ILVGL/src/extra/widgets/spinbox \
+-ILVGL/src/extra/widgets/spinner \
+-ILVGL/src/extra/widgets/tabview \
+-ILVGL/src/extra/widgets/tileview \
+-ILVGL/src/extra/widgets/win
 
 
 # compile gcc flags
@@ -186,18 +251,16 @@ all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET
 # list of objects
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
-# list of ASM program objects
-OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
-vpath %.s $(sort $(dir $(ASM_SOURCES)))
-OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASMM_SOURCES:.S=.o)))
-vpath %.S $(sort $(dir $(ASMM_SOURCES)))
 
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(AS) -c $(CFLAGS) $< -o $@
 $(BUILD_DIR)/%.o: %.S Makefile | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(AS) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile

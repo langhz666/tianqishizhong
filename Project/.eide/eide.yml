@@ -8,6 +8,7 @@ srcDirs:
   - Drivers
   - APP
   - Middlewares/Third_Party/FreeRTOS/Source
+  - LVGL
 virtualFolder:
   name: <virtual_root>
   files:
@@ -47,6 +48,19 @@ targets:
       - Drivers/BSP/bsp_lcd/lcd_ex.c
       - thirdlib/freertos/**/*.c
       - thirdlib/portable/**/*.c
+      - LVGL/examples/**/*.c
+      - LVGL/demos/**/*.c
+      - LVGL/src/draw/sdl/**/*.c
+      - LVGL/src/draw/nxp/**/*.c
+      - LVGL/src/draw/arm2d/**/*.c
+      - LVGL/src/draw/swm341_dma2d/**/*.c
+      - LVGL/src/draw/renesas/**/*.c
+      - APP/page/main_page.c
+      - APP/page/welcome_page.c
+      - APP/page/error_page.c
+      - APP/page/wifi_page.c
+    settings:
+      debugger: cortex-debug
     toolchain: GCC
     toolchainConfigMap:
       GCC:

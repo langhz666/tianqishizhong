@@ -16,4 +16,6 @@ void main_page_redraw_outdoor_city(const char *city);
 void main_page_redraw_outdoor_temperature(float temperature);
 void main_page_redraw_outdoor_weather_icon(const int code);
 
+void lvgl_ui_init(void);
+
 #endif /* __PAGE_H__ */

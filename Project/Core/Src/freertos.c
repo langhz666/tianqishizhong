@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "stm32f4xx.h"
+#include "lvgl.h"
+#include "lv_port_indev.h"
 
 extern int __io_putchar(int ch);
 /* USER CODE END Includes */
@@ -58,7 +60,7 @@ extern int __io_putchar(int ch);
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-static osMutexId_t lcd_mutex = NULL;
+osMutexId_t lcd_mutex = NULL;
 static osEventFlagsId_t app_events = NULL;
 static osTimerId_t led_timer = NULL;
 
@@ -86,8 +88,8 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t wifiTaskHandle;
 const osThreadAttr_t wifiTask_attributes = {
   .name = "wifiTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 
 osThreadId_t timeTaskHandle;
@@ -106,9 +108,16 @@ const osThreadAttr_t sensorTask_attributes = {
 
 osThreadId_t weatherTaskHandle;
 const osThreadAttr_t weatherTask_attributes = {
-  .name = "weatherTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal,
+    .name = "weatherTask",
+    .stack_size = 512 * 4,
+    .priority = (osPriority_t) osPriorityBelowNormal,
+};
+
+osThreadId_t lvglTaskHandle;
+const osThreadAttr_t lvglTask_attributes = {
+    .name = "lvglTask",
+    .stack_size = 1024 * 4,
+    .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE END Definitions */
 
@@ -119,6 +128,7 @@ void StartTimeTask(void *argument);
 void StartSensorTask(void *argument);
 void StartWeatherTask(void *argument);
 static void LedTimerCallback(void *argument);
+void StartLvglTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -175,6 +185,9 @@ void MX_FREERTOS_Init(void) {
   
   weatherTaskHandle = osThreadNew(StartWeatherTask, NULL, &weatherTask_attributes);
   DEBUG_PRINTF("[FREERTOS] weatherTask created: %p\n", (void*)weatherTaskHandle);
+  
+  lvglTaskHandle = osThreadNew(StartLvglTask, NULL, &lvglTask_attributes);
+  DEBUG_PRINTF("[FREERTOS] lvglTask created: %p\n", (void*)lvglTaskHandle);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -476,3 +489,13 @@ void StartWeatherTask(void *argument)
 
 /* USER CODE END Application */
 
+void StartLvglTask(void *argument)
+{
+    DEBUG_PRINTF("[LVGL_TASK] Starting...\n");
+    
+    for (;;)
+    {
+        lv_task_handler();
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+}
