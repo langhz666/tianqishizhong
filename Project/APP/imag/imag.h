@@ -11,8 +11,6 @@ typedef struct
 } image_t;
 
 extern const image_t img_meihua;
-extern const image_t img_error;
-extern const image_t img_wifi;
 extern const image_t icon_wenduji;
 extern const image_t icon_wifi;
 extern const image_t icon_duoyun;
@@ -24,6 +22,7 @@ extern const image_t icon_zhongxue;
 extern const image_t icon_zhongyu;
 extern const image_t icon_na;
 extern const image_t img_chengpingan;
+extern const unsigned char gImage_xiaozhang[];
 
 // extern const unsigned char gImage_imag_kkedg[]; // 声明数组
 // extern const unsigned char gImage_imag_test[]; // 声明数组
