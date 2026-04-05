@@ -1,11 +1,11 @@
 /**
  * @file page.h
- * @brief LVGLÒ³Ãæ¹ÜÀíÄ£¿éÍ·ÎÄ¼ş
+ * @brief LVGLÒ³ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½Í·ï¿½Ä¼ï¿½
  * 
- * ±¾Í·ÎÄ¼şÉùÃ÷ÁËLVGLÒ³Ãæ¹ÜÀíÏà¹ØµÄº¯Êı½Ó¿Ú£¬°üÀ¨£º
- * - Æô¶¯»­Ãæ¿ØÖÆ
- * - WiFiÁ¬½ÓÒ³Ãæ
- * - Ö÷Ò³ÃæÏÔÊ¾ÓëÊı¾İË¢ĞÂ
+ * ï¿½ï¿½Í·ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½LVGLÒ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ØµÄºï¿½ï¿½ï¿½ï¿½Ó¿Ú£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * - WiFiï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
+ * - ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
  * 
  * @author Smart Weather Clock Team
  * @version 1.0.0
@@ -17,129 +17,130 @@
 #include "bsp_rtc.h"
 
 /*============================================================================*/
-/*                             Æô¶¯»­Ãæº¯Êı                                   */
+/*                             ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æº¯ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief ´´½¨²¢ÏÔÊ¾Æô¶¯»­Ãæ
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void splash_screen_start(void);
 
 /**
- * @brief ¸üĞÂÆô¶¯»­Ãæ½ø¶È
- * @param progress  ½ø¶ÈÖµ (0-100)
- * @param status    ×´Ì¬ÎÄ±¾
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @param progress  ï¿½ï¿½ï¿½ï¿½Öµ (0-100)
+ * @param status    ×´Ì¬ï¿½Ä±ï¿½
  */
 void splash_set_progress(uint8_t progress, const char *status);
 
 /**
- * @brief ½áÊøÆô¶¯»­Ãæ
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void splash_screen_end(void);
 
 /*============================================================================*/
-/*                             Ò³ÃæÏÔÊ¾º¯Êı                                   */
+/*                             Ò³ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief ÏÔÊ¾»¶Ó­Ò³Ãæ
+ * @brief ï¿½ï¿½Ê¾ï¿½ï¿½Ó­Ò³ï¿½ï¿½
  */
 void welcome_page_display(void);
 
 /**
- * @brief ÏÔÊ¾´íÎóÒ³Ãæ
- * @param msg  ´íÎóĞÅÏ¢×Ö·û´®
+ * @brief ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
+ * @param msg  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Ö·ï¿½ï¿½ï¿½
  */
 void error_page_display(const char *msg);
 
 /**
- * @brief ÏÔÊ¾WiFiÁ¬½ÓÒ³Ãæ
+ * @brief ï¿½ï¿½Ê¾WiFiï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
  */
 void wifi_page_display(void);
 
 /**
- * @brief ¸üĞÂWiFiÁ¬½Ó×´Ì¬
- * @param status   ×´Ì¬ÎÄ±¾
- * @param success  ÊÇ·ñÁ¬½Ó³É¹¦
+ * @brief ï¿½ï¿½ï¿½ï¿½WiFiï¿½ï¿½ï¿½ï¿½×´Ì¬
+ * @param status   ×´Ì¬ï¿½Ä±ï¿½
+ * @param success  ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Ó³É¹ï¿½
  */
 void wifi_page_set_status(const char *status, bool success);
 
 /**
- * @brief ÏÔÊ¾Ö÷Ò³Ãæ
+ * @brief ï¿½ï¿½Ê¾ï¿½ï¿½Ò³ï¿½ï¿½
  */
 void main_page_display(void);
 
 /*============================================================================*/
-/*                             Êı¾İË¢ĞÂº¯Êı                                   */
+/*                             ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½Âºï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief ¸üĞÂWiFi SSIDÏÔÊ¾
- * @param ssid  SSID×Ö·û´®
+ * @brief WiFi SSIDÊ¾
+ * @param ssid      SSIDÖ·
+ * @param connected Ç·Ó³É¹
  */
-void main_page_redraw_wifi_ssid(const char *ssid);
+void main_page_redraw_wifi_ssid(const char *ssid, bool connected);
 
 /**
- * @brief ¸üĞÂÊ±¼äÏÔÊ¾
- * @param time  RTCÊ±¼ä½á¹¹ÌåÖ¸Õë
+ * @brief ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param time  RTCÊ±ï¿½ï¿½á¹¹ï¿½ï¿½Ö¸ï¿½ï¿½
  */
 void main_page_redraw_time(rtc_date_time_t *time);
 
 /**
- * @brief ¸üĞÂÈÕÆÚÏÔÊ¾
- * @param date  RTCÈÕÆÚ½á¹¹ÌåÖ¸Õë
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param date  RTCï¿½ï¿½ï¿½Ú½á¹¹ï¿½ï¿½Ö¸ï¿½ï¿½
  */
 void main_page_redraw_date(rtc_date_time_t *date);
 
 /**
- * @brief ¸üĞÂÊÒÄÚÎÂ¶ÈÏÔÊ¾
- * @param temperature  ÎÂ¶ÈÖµ(ÉãÊÏ¶È)
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶ï¿½ï¿½ï¿½Ê¾
+ * @param temperature  ï¿½Â¶ï¿½Öµ(ï¿½ï¿½ï¿½Ï¶ï¿½)
  */
 void main_page_redraw_inner_temperature(float temperature);
 
 /**
- * @brief ¸üĞÂÊÒÄÚÊª¶ÈÏÔÊ¾
- * @param humidity  Êª¶ÈÖµ(°Ù·Ö±È)
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êªï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param humidity  Êªï¿½ï¿½Öµ(ï¿½Ù·Ö±ï¿½)
  */
 void main_page_redraw_inner_humidity(float humidity);
 
 /**
- * @brief ¸üĞÂ³ÇÊĞÃû³ÆÏÔÊ¾
- * @param city  ³ÇÊĞÃû³Æ
+ * @brief ï¿½ï¿½ï¿½Â³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param city  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void main_page_redraw_outdoor_city(const char *city);
 
 /**
- * @brief ¸üĞÂÊÒÍâÎÂ¶ÈÏÔÊ¾
- * @param temperature  ÎÂ¶ÈÖµ(ÉãÊÏ¶È)
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶ï¿½ï¿½ï¿½Ê¾
+ * @param temperature  ï¿½Â¶ï¿½Öµ(ï¿½ï¿½ï¿½Ï¶ï¿½)
  */
 void main_page_redraw_outdoor_temperature(float temperature);
 
 /**
- * @brief ¸üĞÂÌìÆøÍ¼±êÏÔÊ¾
- * @param code  ÌìÆø´úÂë
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼ï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param code  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void main_page_redraw_outdoor_weather_icon(const int code);
 
 /**
- * @brief ¸üĞÂÌìÆøÊª¶ÈÏÔÊ¾
- * @param humidity  Êª¶ÈÖµ(°Ù·Ö±È)
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êªï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param humidity  Êªï¿½ï¿½Öµ(ï¿½Ù·Ö±ï¿½)
  */
 void main_page_redraw_outdoor_humidity(int humidity);
 
 /**
- * @brief ¸üĞÂÌìÆø·çËÙÏÔÊ¾
- * @param wind_speed  ·çËÙÖµ(km/h)
- * @param wind_direction  ·çÏò×Ö·û´®
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
+ * @param wind_speed  ï¿½ï¿½ï¿½ï¿½Öµ(km/h)
+ * @param wind_direction  ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½
  */
 void main_page_redraw_outdoor_wind(int wind_speed, const char *wind_direction);
 
 /*============================================================================*/
-/*                             ³õÊ¼»¯º¯Êı                                     */
+/*                             ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                     */
 /*============================================================================*/
 
 /**
- * @brief ³õÊ¼»¯LVGLÓÃ»§½çÃæ
+ * @brief ï¿½ï¿½Ê¼ï¿½ï¿½LVGLï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 void lvgl_ui_init(void);
 

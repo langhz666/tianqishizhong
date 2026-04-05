@@ -1,54 +1,90 @@
+/**
+ * @file bsp_rtc.c
+ * @brief RTCÊµÊ±Ê±ÖÓÇı¶¯Ä£¿é
+ * 
+ * ±¾ÎÄ¼şÊµÏÖÁËSTM32F4ÄÚ²¿RTC£¨ÊµÊ±Ê±ÖÓ£©µÄÇı¶¯¹¦ÄÜ£¬°üÀ¨£º
+ * - Ê±¼äÉèÖÃÓë¶ÁÈ¡
+ * - ÈÕÆÚÉèÖÃÓë¶ÁÈ¡
+ * - ·À¶¶¶¯¶ÁÈ¡»úÖÆ
+ * 
+ * RTCÌØĞÔ£º
+ * - Ê¹ÓÃÄÚ²¿32.768kHzµÍËÙÍâ²¿¾§Õñ(LSE)×÷ÎªÊ±ÖÓÔ´
+ * - Ö§³ÖÄê¡¢ÔÂ¡¢ÈÕ¡¢ĞÇÆÚ¡¢Ê±¡¢·Ö¡¢ÃëµÄÍêÕûÊ±¼äĞÅÏ¢
+ * - ¾ßÓĞºó±¸µç³Ø¹©µçÄÜÁ¦£¬Ö÷µçÔ´¶ÏµçºóÈÔ¿É±£³Ö¼ÆÊ±
+ * 
+ * ¶ÁÈ¡»úÖÆËµÃ÷£º
+ * STM32F4µÄRTC²ÉÓÃË«»º³å»úÖÆ£¬¶ÁÈ¡Ê±¼äºÍÈÕÆÚÓĞÌØ¶¨Ë³ĞòÒªÇó£º
+ * - ±ØĞëÏÈ¶ÁÈ¡Ê±¼ä¼Ä´æÆ÷£¬ÔÙ¶ÁÈ¡ÈÕÆÚ¼Ä´æÆ÷
+ * - ¶ÁÈ¡Ê±¼ä¼Ä´æÆ÷»á´¥·¢ÈÕÆÚ¼Ä´æÆ÷µÄÓ°×Ó¼Ä´æÆ÷Ëø´æ
+ * 
+ * @author Smart Weather Clock Team
+ * @version 1.0.0
+ */
+
 #include "bsp_rtc.h"
-#include "rtc.h"      // åŒ…å« CubeMX ç”Ÿæˆçš„ rtc.h ä»¥è·å– hrtc å¥æŸ„
+#include "rtc.h"
 #include <string.h>
 
-// å¼•ç”¨ CubeMX åœ¨ rtc.c ä¸­ç”Ÿæˆçš„å¥æŸ„
-extern RTC_HandleTypeDef hrtc;
+/*============================================================================*/
+/*                             Íâ²¿±äÁ¿ÉùÃ÷                                   */
+/*============================================================================*/
+
+extern RTC_HandleTypeDef hrtc;    /**< CubeMXÉú³ÉµÄRTC¾ä±ú */
+
+/*============================================================================*/
+/*                             Ë½ÓĞº¯ÊıÊµÏÖ                                   */
+/*============================================================================*/
 
 /**
- * @brief  å†…éƒ¨é™æ€å‡½æ•°ï¼šå•æ¬¡è®¾ç½®æ—¶é—´ (ç§»æ¤ä¸º HAL åº“)
+ * @brief µ¥´ÎÉèÖÃRTCÊ±¼ä£¨ÄÚ²¿º¯Êı£©
+ * 
+ * ½«Ê±¼äÈÕÆÚÊı¾İĞ´ÈëRTC¼Ä´æÆ÷£¬Ê¹ÓÃBIN¸ñÊ½£¨HAL¿â×Ô¶¯´¦ÀíBCD×ª»»£©
+ * 
+ * @param date_time Ö¸ÏòÊ±¼äÈÕÆÚ½á¹¹ÌåµÄÖ¸Õë
+ * 
+ * @note ´Ëº¯Êı²»°üº¬·À¶¶¶¯Âß¼­£¬½ö¹©ÄÚ²¿Ê¹ÓÃ
+ * @note Äê·İ´æ´¢Ê±¼õÈ¥2000£¬ÒòÎªSTM32 RTC¼Ä´æÆ÷Ö»±£´æ0-99
  */
 static void _bsp_rtc_set_time_once(const rtc_date_time_t *date_time)
 {
     RTC_TimeTypeDef sTime = {0};
     RTC_DateTypeDef sDate = {0};
 
-    // 1. å¡«å……æ—¶é—´ç»“æ„ä½“
     sTime.Hours = date_time->hour;
     sTime.Minutes = date_time->minute;
     sTime.Seconds = date_time->second;
     sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     sTime.StoreOperation = RTC_STOREOPERATION_RESET;
 
-    // 2. å¡«å……æ—¥æœŸç»“æ„ä½“
-    sDate.WeekDay = date_time->weekday; // HALåº“å®šä¹‰: RTC_WEEKDAY_MONDAY = 1
+    sDate.WeekDay = date_time->weekday;
     sDate.Month = date_time->month;
     sDate.Date = date_time->day;
-    sDate.Year = date_time->year - 2000; // STM32 RTC å¯„å­˜å™¨åªä¿å­˜ 0-99
+    sDate.Year = date_time->year - 2000;
 
-    // 3. å†™å…¥ RTC (ä½¿ç”¨ BIN æ ¼å¼ï¼ŒHALåº“ä¼šè‡ªåŠ¨å¤„ç† BCD è½¬æ¢)
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
     HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
     
-    // 4. (å¯é€‰) å†™å…¥å¤‡ä»½å¯„å­˜å™¨æ ‡è®°ï¼Œè¡¨ç¤ºæ—¶é—´å·²è®¾ç½®
-    // 0x32F2 æ˜¯ä¸€ä¸ªé­”æ³•æ•°å­—ï¼Œä¸‹æ¬¡ä¸Šç”µå¯ä»¥è¯»å–å®ƒæ¥åˆ¤æ–­æ˜¯å¦éœ€è¦é‡ç½®æ—¶é—´
     HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x32F2);
 }
 
 /**
- * @brief  å†…éƒ¨é™æ€å‡½æ•°ï¼šå•æ¬¡è·å–æ—¶é—´ (ç§»æ¤ä¸º HAL åº“)
+ * @brief µ¥´Î¶ÁÈ¡RTCÊ±¼ä£¨ÄÚ²¿º¯Êı£©
+ * 
+ * ´ÓRTC¼Ä´æÆ÷¶ÁÈ¡Ê±¼äÈÕÆÚÊı¾İ
+ * 
+ * @param date_time Êä³öµÄÊ±¼äÈÕÆÚ½á¹¹ÌåÖ¸Õë
+ * 
+ * @note ±ØĞëÏÈ¶ÁTimeÔÙ¶ÁDate£¬ÕâÊÇF4Ó²¼şËø´æ»úÖÆµÄÒªÇó
+ * @note ¶ÁÈ¡ºóÄê·İĞèÒª¼ÓÉÏ2000»Ö¸´ÍêÕûÄê·İ
  */
 static void _bsp_rtc_get_time_once(rtc_date_time_t *date_time)
 {
     RTC_TimeTypeDef sTime = {0};
     RTC_DateTypeDef sDate = {0};
 
-    // 1. è¯»å– RTC
-    // æ³¨æ„ï¼šå¿…é¡»å…ˆè¯» Time å†è¯» Dateï¼Œè¿™æ˜¯ F4 ç¡¬ä»¶é”å­˜æœºåˆ¶çš„è¦æ±‚
     HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-    // 2. è½¬æ¢å›è‡ªå®šä¹‰ç»“æ„ä½“
     date_time->year = 2000 + sDate.Year;
     date_time->month = sDate.Month;
     date_time->day = sDate.Date;
@@ -58,14 +94,27 @@ static void _bsp_rtc_get_time_once(rtc_date_time_t *date_time)
     date_time->second = sTime.Seconds;
 }
 
+/*============================================================================*/
+/*                             ¹«¹²º¯ÊıÊµÏÖ                                   */
+/*============================================================================*/
+
 /**
- * @brief  å¯¹å¤–æ¥å£ï¼šè®¾ç½®æ—¶é—´
- * (ä¿ç•™åŸé€»è¾‘ï¼šå¾ªç¯ç›´åˆ°è¯»å‡ºçš„ç§’æ•°ç­‰äºå†™å…¥çš„ç§’æ•°ï¼Œç¡®ä¿å†™å…¥æˆåŠŸ)
+ * @brief ÉèÖÃRTCÊ±¼ä
+ * 
+ * ½«Ö¸¶¨µÄÊ±¼äÈÕÆÚĞ´ÈëRTC¼Ä´æÆ÷£¬²ÉÓÃ·À¶¶¶¯»úÖÆÈ·±£Ğ´ÈëÕıÈ·¡£
+ * 
+ * ·À¶¶¶¯Ô­Àí£º
+ * Ñ­»·Ğ´Èë²¢¶ÁÈ¡ÑéÖ¤£¬Ö±µ½¶ÁÈ¡µÄÃëÊıÓëĞ´ÈëµÄÃëÊıÒ»ÖÂ¡£
+ * Õâ¿ÉÒÔ·ÀÖ¹ÔÚĞ´Èë¹ı³ÌÖĞ·¢ÉúÃë½øÎ»µ¼ÖÂµÄÊ±¼äÆ«²î¡£
+ * 
+ * @param date_time Ö¸ÏòÊ±¼äÈÕÆÚ½á¹¹ÌåµÄÖ¸Õë
+ * 
+ * @note ´Ëº¯Êı»á×èÈûÖ±µ½Ğ´Èë³É¹¦
+ * @note Í¨³£ÔÚ1-2´ÎÑ­»·ÄÚ¼´¿ÉÍê³É
  */
 void bsp_rtc_set_time(const rtc_date_time_t *date_time)
 {
     rtc_date_time_t rtime;
-    // è¿™é‡Œçš„é€»è¾‘éå¸¸å¥½ï¼Œé˜²æ­¢æ­£åœ¨å†™å…¥æ—¶å‘ç”Ÿç§’è¿›ä½å¯¼è‡´è®¾ç½®åå·®
     do {
         _bsp_rtc_set_time_once(date_time);
         _bsp_rtc_get_time_once(&rtime);
@@ -73,13 +122,22 @@ void bsp_rtc_set_time(const rtc_date_time_t *date_time)
 }
 
 /**
- * @brief  å¯¹å¤–æ¥å£ï¼šè·å–æ—¶é—´
- * (ä¿ç•™åŸé€»è¾‘ï¼šè¿ç»­è¯»å–ä¸¤æ¬¡ç›´åˆ°ä¸€è‡´ï¼Œé˜²æ­¢è¯»å–è¿‡ç¨‹ä¸­å‘ç”Ÿè¿›ä½)
+ * @brief ¶ÁÈ¡RTCÊ±¼ä
+ * 
+ * ´ÓRTC¼Ä´æÆ÷¶ÁÈ¡µ±Ç°Ê±¼äÈÕÆÚ£¬²ÉÓÃ·À¶¶¶¯»úÖÆÈ·±£¶ÁÈ¡ÕıÈ·¡£
+ * 
+ * ·À¶¶¶¯Ô­Àí£º
+ * Á¬Ğø¶ÁÈ¡Á½´ÎÊ±¼ä£¬Ö±µ½Á½´Î¶ÁÈ¡½á¹ûÍêÈ«Ò»ÖÂ¡£
+ * Õâ¿ÉÒÔ·ÀÖ¹ÔÚ¶ÁÈ¡¹ı³ÌÖĞ·¢Éú½øÎ»£¨Èç23:59:59 -> 00:00:00£©µ¼ÖÂµÄÊı¾İ²»Ò»ÖÂ¡£
+ * 
+ * @param date_time Êä³öµÄÊ±¼äÈÕÆÚ½á¹¹ÌåÖ¸Õë
+ * 
+ * @note ´Ëº¯Êı»á×èÈûÖ±µ½¶ÁÈ¡ÎÈ¶¨
+ * @note Í¨³£ÔÚ1-2´ÎÑ­»·ÄÚ¼´¿ÉÍê³É
  */
 void bsp_rtc_get_time(rtc_date_time_t *date_time)
 {
     rtc_date_time_t time1, time2;
-    // é˜²æŠ–åŠ¨è¯»å–
     do {
         _bsp_rtc_get_time_once(&time1);
         _bsp_rtc_get_time_once(&time2);

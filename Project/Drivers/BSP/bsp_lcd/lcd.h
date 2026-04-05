@@ -33,7 +33,6 @@
 #include "main.h"
 #include "lcdfont.h"
 #include "imag.h"
-#include "font.h"
 
 /* 枚举类型定义 */
 typedef enum

@@ -323,6 +323,12 @@ void StartWifiTask(void *argument)
     
     main_page_display();
     
+    esp_wifi_info_t wifi_info = {0};
+    if (esp_at_get_wifi_info(&wifi_info) && wifi_info.connected)
+    {
+        main_page_redraw_wifi_ssid(wifi_info.ssid, true);
+    }
+    
     osEventFlagsSet(app_events, EVENT_MAIN_PAGE_READY);
     DEBUG_PRINTF("[WIFI_TASK] Main page displayed, entering monitor loop\n");
     
@@ -340,12 +346,18 @@ void StartWifiTask(void *argument)
                 {
                     DEBUG_PRINTF("[WIFI_TASK] Connection lost, reconnecting...\n");
                     osEventFlagsClear(app_events, EVENT_WIFI_CONNECTED);
+                    main_page_redraw_wifi_ssid("disconnected", false);
                     
                     if (esp_at_connect_wifi(WIFI_SSID, WIFI_PASSWD, NULL))
                     {
                         DEBUG_PRINTF("[WIFI_TASK] Reconnected\n");
                         osEventFlagsSet(app_events, EVENT_WIFI_CONNECTED);
                         disconnect_count = 0;
+                        esp_wifi_info_t new_wifi = {0};
+                        if (esp_at_get_wifi_info(&new_wifi) && new_wifi.connected)
+                        {
+                            main_page_redraw_wifi_ssid(new_wifi.ssid, true);
+                        }
                     }
                 }
             }
