@@ -1,22 +1,22 @@
 /**
  * @file bsp_espat.c
- * @brief ESP8266/ESP32 ATÖ¸ÁîÇý¶¯Ä£¿é
+ * @brief ESP8266/ESP32 ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½
  * 
- * ±¾ÎÄ¼þÊµÏÖÁËÍ¨¹ýUARTÓëESP8266/ESP32Ä£¿éÍ¨ÐÅµÄATÖ¸ÁîÇý¶¯£¬°üÀ¨£º
- * - ATÖ¸Áî·¢ËÍÓëÏìÓ¦½âÎö
- * - WiFiÁ¬½Ó¹ÜÀí
- * - SNTPÊ±¼äÍ¬²½
- * - HTTP GETÇëÇó
+ * ï¿½ï¿½ï¿½Ä¼ï¿½Êµï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½UARTï¿½ï¿½ESP8266/ESP32Ä£ï¿½ï¿½Í¨ï¿½Åµï¿½ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * - ATÖ¸ï¿½î·¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
+ * - WiFiï¿½ï¿½ï¿½Ó¹ï¿½ï¿½ï¿½
+ * - SNTPÊ±ï¿½ï¿½Í¬ï¿½ï¿½
+ * - HTTP GETï¿½ï¿½ï¿½ï¿½
  * 
- * Í¨ÐÅÐ­Òé£º
- * - ²¨ÌØÂÊ£º115200 bps
- * - Êý¾ÝÎ»£º8Î»
- * - Í£Ö¹Î»£º1Î»
- * - Ð£ÑéÎ»£ºÎÞ
+ * Í¨ï¿½ï¿½Ð­ï¿½é£º
+ * - ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½115200 bps
+ * - ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½8Î»
+ * - Í£Ö¹Î»ï¿½ï¿½1Î»
+ * - Ð£ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
  * 
- * ATÖ¸ÁîÏìÓ¦¸ñÊ½£º
- * - ³É¹¦£ºÃüÁî»ØÏÔ + "\r\n" + "OK" + "\r\n"
- * - Ê§°Ü£ºÃüÁî»ØÏÔ + "\r\n" + "ERROR" + "\r\n"
+ * ATÖ¸ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½Ê½ï¿½ï¿½
+ * - ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ + "\r\n" + "OK" + "\r\n"
+ * - Ê§ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ + "\r\n" + "ERROR" + "\r\n"
  * 
  * @author Smart Weather Clock Team
  * @version 1.0.0
@@ -30,95 +30,95 @@
 #include "bsp_espat.h"
 
 /*============================================================================*/
-/*                             ºê¶¨Òå                                         */
+/*                             ï¿½ê¶¨ï¿½ï¿½                                         */
 /*============================================================================*/
 
 /**
- * @brief ¼ÆËãÊý×éÔªËØ¸öÊý
- * @param arr Êý×éÃû
- * @return Êý×éÔªËØ¸öÊý
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôªï¿½Ø¸ï¿½ï¿½ï¿½
+ * @param arr ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @return ï¿½ï¿½ï¿½ï¿½Ôªï¿½Ø¸ï¿½ï¿½ï¿½
  */
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /*============================================================================*/
-/*                             Íâ²¿±äÁ¿ÉùÃ÷                                   */
+/*                             ï¿½â²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
-extern UART_HandleTypeDef huart2;    /**< UART2¾ä±ú£¬ÓÃÓÚÓëESPÄ£¿éÍ¨ÐÅ */
-extern void esp_lock(void);          /**< »ñÈ¡ESPÄ£¿é»¥³âËø */
-extern void esp_unlock(void);        /**< ÊÍ·ÅESPÄ£¿é»¥³âËø */
+extern UART_HandleTypeDef huart2;    /**< UART2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ESPÄ£ï¿½ï¿½Í¨ï¿½ï¿½ */
+extern void esp_lock(void);          /**< ï¿½ï¿½È¡ESPÄ£ï¿½é»¥ï¿½ï¿½ï¿½ï¿½ */
+extern void esp_unlock(void);        /**< ï¿½Í·ï¿½ESPÄ£ï¿½é»¥ï¿½ï¿½ï¿½ï¿½ */
 
 /*============================================================================*/
-/*                             Ë½ÓÐºê¶¨Òå                                     */
+/*                             Ë½ï¿½Ðºê¶¨ï¿½ï¿½                                     */
 /*============================================================================*/
 
-#define ESP_UART_HANDLE (&huart2)    /**< ESPÄ£¿éÊ¹ÓÃµÄUART¾ä±úÖ¸Õë */
+#define ESP_UART_HANDLE (&huart2)    /**< ESPÄ£ï¿½ï¿½Ê¹ï¿½Ãµï¿½UARTï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ */
 
 /*============================================================================*/
-/*                             Ë½ÓÐÀàÐÍ¶¨Òå                                   */
+/*                             Ë½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief ATÖ¸ÁîÏìÓ¦ÀàÐÍÃ¶¾Ù
+ * @brief ATÖ¸ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ã¶ï¿½ï¿½
  */
 typedef enum
 {
-    AT_ACK_NONE,     /**< ÎÞÏìÓ¦/³¬Ê± */
-    AT_ACK_OK,       /**< ÏìÓ¦OK */
-    AT_ACK_ERROR,    /**< ÏìÓ¦ERROR */
-    AT_ACK_BUSY,     /**< Ä£¿éÃ¦ */
-    AT_ACK_READY,    /**< Ä£¿é¾ÍÐ÷ */
+    AT_ACK_NONE,     /**< ï¿½ï¿½ï¿½ï¿½Ó¦/ï¿½ï¿½Ê± */
+    AT_ACK_OK,       /**< ï¿½ï¿½Ó¦OK */
+    AT_ACK_ERROR,    /**< ï¿½ï¿½Ó¦ERROR */
+    AT_ACK_BUSY,     /**< Ä£ï¿½ï¿½Ã¦ */
+    AT_ACK_READY,    /**< Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ */
 } at_ack_t;
 
 /**
- * @brief ATÏìÓ¦Æ¥Åä½á¹¹Ìå
- * ÓÃÓÚ½«ÏìÓ¦×Ö·û´®Ó³Éäµ½ÏìÓ¦ÀàÐÍ
+ * @brief ATï¿½ï¿½Ó¦Æ¥ï¿½ï¿½á¹¹ï¿½ï¿½
+ * ï¿½ï¿½ï¿½Ú½ï¿½ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½Ó³ï¿½äµ½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
  */
 typedef struct
 {
-    at_ack_t ack;         /**< ÏìÓ¦ÀàÐÍ */
-    const char *string;   /**< ÏìÓ¦×Ö·û´® */
+    at_ack_t ack;         /**< ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ */
+    const char *string;   /**< ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½ */
 } at_ack_match_t;
 
 /*============================================================================*/
-/*                             Ë½ÓÐ±äÁ¿                                       */
+/*                             Ë½ï¿½Ð±ï¿½ï¿½ï¿½                                       */
 /*============================================================================*/
 
 /**
- * @brief ATÏìÓ¦Æ¥Åä±í
- * ¶¨ÒåÁË¸÷ÖÖATÖ¸ÁîÏìÓ¦×Ö·û´®ÓëÏìÓ¦ÀàÐÍµÄ¶ÔÓ¦¹ØÏµ
+ * @brief ATï¿½ï¿½Ó¦Æ¥ï¿½ï¿½ï¿½
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Ë¸ï¿½ï¿½ï¿½ATÖ¸ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ÍµÄ¶ï¿½Ó¦ï¿½ï¿½Ïµ
  */
 static const at_ack_match_t at_ack_matches[] = 
 {
-    {AT_ACK_OK, "OK\r\n"},         /**< ³É¹¦ÏìÓ¦ */
-    {AT_ACK_ERROR, "ERROR\r\n"},   /**< ´íÎóÏìÓ¦ */
-    {AT_ACK_BUSY, "busy p..."},    /**< Ã¦ÂµÏìÓ¦ */
-    {AT_ACK_READY, "ready\r\n"},   /**< ¾ÍÐ÷ÏìÓ¦ */
+    {AT_ACK_OK, "OK\r\n"},         /**< ï¿½É¹ï¿½ï¿½ï¿½Ó¦ */
+    {AT_ACK_ERROR, "ERROR\r\n"},   /**< ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ */
+    {AT_ACK_BUSY, "busy p..."},    /**< Ã¦Âµï¿½ï¿½Ó¦ */
+    {AT_ACK_READY, "ready\r\n"},   /**< ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ */
 };
 
-static char rxbuf[2048];           /**< UART½ÓÊÕ»º³åÇø */
+static char rxbuf[2048];           /**< UARTï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ */
 
 /*============================================================================*/
-/*                             Ë½ÓÐº¯ÊýÉùÃ÷                                   */
+/*                             Ë½ï¿½Ðºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 static void esp_at_usart_write(const char *data);
 
 /*============================================================================*/
-/*                             UARTÍ¨ÐÅº¯Êý                                   */
+/*                             UARTÍ¨ï¿½Åºï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief µÈ´ý²¢½ÓÊÕUARTÏìÓ¦Êý¾Ý
+ * @brief ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½UARTï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
  * 
- * ´Ëº¯Êý²ÉÓÃÂÖÑ¯·½Ê½½ÓÊÕUARTÊý¾Ý£¬²¢ÔÚÊÕµ½ÍêÕûÏìÓ¦ºó½âÎöÏìÓ¦ÀàÐÍ¡£
- * ÏìÓ¦ÒÔ»»ÐÐ·û(\n)½áÎ²Ê±½øÐÐÆ¥Åä¼ì²é¡£
+ * ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½UARTï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Í¡ï¿½
+ * ï¿½ï¿½Ó¦ï¿½Ô»ï¿½ï¿½Ð·ï¿½(\n)ï¿½ï¿½Î²Ê±ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½ï¿½é¡£
  * 
- * @param timeout ³¬Ê±Ê±¼ä£¨ºÁÃë£©
- * @return at_ack_t ÏìÓ¦ÀàÐÍÃ¶¾ÙÖµ
+ * @param timeout ï¿½ï¿½Ê±Ê±ï¿½ä£¨ï¿½ï¿½ï¿½ë£©
+ * @return at_ack_t ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ã¶ï¿½ï¿½Öµ
  * 
- * @note ´Ëº¯Êý»áÇå³ý½ÓÊÕ»º³åÇøºóÔÙ¿ªÊ¼½ÓÊÕ
- * @note Èç¹û½ÓÊÕ»º³åÇøÂúÈÔÎ´ÊÕµ½ÍêÕûÏìÓ¦£¬·µ»ØAT_ACK_NONE
+ * @note ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¿ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
+ * @note ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½AT_ACK_NONE
  */
 static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
 {
@@ -164,12 +164,12 @@ static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
 }
 
 /**
- * @brief Í¨¹ýUART·¢ËÍATÖ¸Áî
+ * @brief Í¨ï¿½ï¿½UARTï¿½ï¿½ï¿½ï¿½ATÖ¸ï¿½ï¿½
  * 
- * ·¢ËÍ¸ñÊ½£ºÖ¸ÁîÄÚÈÝ + "\r\n"
- * ATÖ¸Áî±ØÐëÒÔ»Ø³µ»»ÐÐ½áÎ²²ÅÄÜ±»ESPÄ£¿éÊ¶±ð
+ * ï¿½ï¿½ï¿½Í¸ï¿½Ê½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ + "\r\n"
+ * ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô»Ø³ï¿½ï¿½ï¿½ï¿½Ð½ï¿½Î²ï¿½ï¿½ï¿½Ü±ï¿½ESPÄ£ï¿½ï¿½Ê¶ï¿½ï¿½
  * 
- * @param data Òª·¢ËÍµÄÖ¸Áî×Ö·û´®£¨²»º¬\r\n£©
+ * @param data Òªï¿½ï¿½ï¿½Íµï¿½Ö¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\r\nï¿½ï¿½
  */
 static void esp_at_usart_write(const char *data)
 {
@@ -183,17 +183,17 @@ static void esp_at_usart_write(const char *data)
 }
 
 /*============================================================================*/
-/*                             ATÖ¸Áî»ù´¡º¯Êý                                 */
+/*                             ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                 */
 /*============================================================================*/
 
 /**
- * @brief µÈ´ýESPÄ£¿é¾ÍÐ÷
+ * @brief ï¿½È´ï¿½ESPÄ£ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * µÈ´ýESPÄ£¿éÉÏµçÍê³Éºó·¢ËÍ"ready"ÏìÓ¦
+ * ï¿½È´ï¿½ESPÄ£ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½Éºï¿½ï¿½ï¿½"ready"ï¿½ï¿½Ó¦
  * 
- * @param timeout ³¬Ê±Ê±¼ä£¨ºÁÃë£©
- * @return true Ä£¿é¾ÍÐ÷
- * @return false ³¬Ê±Î´ÊÕµ½¾ÍÐ÷ÏìÓ¦
+ * @param timeout ï¿½ï¿½Ê±Ê±ï¿½ä£¨ï¿½ï¿½ï¿½ë£©
+ * @return true Ä£ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @return false ï¿½ï¿½Ê±Î´ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦
  */
 bool esp_at_wait_ready(uint32_t timeout)
 {
@@ -201,14 +201,14 @@ bool esp_at_wait_ready(uint32_t timeout)
 }
 
 /**
- * @brief ·¢ËÍATÖ¸Áî²¢µÈ´ýÏìÓ¦£¨ÎÞËø±£»¤£©
+ * @brief ï¿½ï¿½ï¿½ï¿½ATÖ¸ï¿½î²¢ï¿½È´ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * @param command ATÖ¸Áî×Ö·û´®£¨²»º¬\r\n£©
- * @param timeout ³¬Ê±Ê±¼ä£¨ºÁÃë£©
- * @return true Ö¸ÁîÖ´ÐÐ³É¹¦£¨ÊÕµ½OK£©
- * @return false Ö¸ÁîÖ´ÐÐÊ§°Ü»ò³¬Ê±
+ * @param command ATÖ¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\r\nï¿½ï¿½
+ * @param timeout ï¿½ï¿½Ê±Ê±ï¿½ä£¨ï¿½ï¿½ï¿½ë£©
+ * @return true Ö¸ï¿½ï¿½Ö´ï¿½Ð³É¹ï¿½ï¿½ï¿½ï¿½Õµï¿½OKï¿½ï¿½
+ * @return false Ö¸ï¿½ï¿½Ö´ï¿½ï¿½Ê§ï¿½Ü»ï¿½Ê±
  * 
- * @note ´Ëº¯Êý²»ÊÇÏß³Ì°²È«µÄ£¬¶àÈÎÎñ»·¾³ÏÂÇëÊ¹ÓÃesp_at_write_command_locked
+ * @note ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì°ï¿½È«ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ñ»·¾ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½esp_at_write_command_locked
  */
 bool esp_at_write_command(const char *command, uint32_t timeout)
 {
@@ -218,14 +218,14 @@ bool esp_at_write_command(const char *command, uint32_t timeout)
 }
 
 /**
- * @brief ·¢ËÍATÖ¸Áî²¢µÈ´ýÏìÓ¦£¨´ø»¥³âËø±£»¤£©
+ * @brief ï¿½ï¿½ï¿½ï¿½ATÖ¸ï¿½î²¢ï¿½È´ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * ÔÚ¶àÈÎÎñ»·¾³ÏÂ£¬Ê¹ÓÃ´Ëº¯Êý¿ÉÒÔ·ÀÖ¹¶à¸öÈÎÎñÍ¬Ê±·ÃÎÊESPÄ£¿éµ¼ÖÂµÄ³åÍ»
+ * ï¿½Ú¶ï¿½ï¿½ï¿½ï¿½ñ»·¾ï¿½ï¿½Â£ï¿½Ê¹ï¿½Ã´Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô·ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬Ê±ï¿½ï¿½ï¿½ï¿½ESPÄ£ï¿½éµ¼ï¿½ÂµÄ³ï¿½Í»
  * 
- * @param command ATÖ¸Áî×Ö·û´®£¨²»º¬\r\n£©
- * @param timeout ³¬Ê±Ê±¼ä£¨ºÁÃë£©
- * @return true Ö¸ÁîÖ´ÐÐ³É¹¦
- * @return false Ö¸ÁîÖ´ÐÐÊ§°Ü»ò³¬Ê±
+ * @param command ATÖ¸ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\r\nï¿½ï¿½
+ * @param timeout ï¿½ï¿½Ê±Ê±ï¿½ä£¨ï¿½ï¿½ï¿½ë£©
+ * @return true Ö¸ï¿½ï¿½Ö´ï¿½Ð³É¹ï¿½
+ * @return false Ö¸ï¿½ï¿½Ö´ï¿½ï¿½Ê§ï¿½Ü»ï¿½Ê±
  */
 bool esp_at_write_command_locked(const char *command, uint32_t timeout)
 {
@@ -236,11 +236,11 @@ bool esp_at_write_command_locked(const char *command, uint32_t timeout)
 }
 
 /**
- * @brief »ñÈ¡×î½üÒ»´ÎATÖ¸ÁîµÄÏìÓ¦Êý¾Ý
+ * @brief ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
  * 
- * @return const char* ÏìÓ¦×Ö·û´®Ö¸Õë£¨Ö¸ÏòÄÚ²¿»º³åÇø£©
+ * @return const char* ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½Ö¸ï¿½ë£¨Ö¸ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * @note ·µ»ØµÄÖ¸ÕëÖ¸ÏòÄÚ²¿»º³åÇø£¬ÏÂ´Î½ÓÊÕ»á¸²¸ÇÄÚÈÝ
+ * @note ï¿½ï¿½ï¿½Øµï¿½Ö¸ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â´Î½ï¿½ï¿½Õ»á¸²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 const char *esp_at_get_response(void)
 {
@@ -248,25 +248,25 @@ const char *esp_at_get_response(void)
 }
 
 /*============================================================================*/
-/*                             ESPÄ£¿é³õÊ¼»¯º¯Êý                              */
+/*                             ESPÄ£ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                              */
 /*============================================================================*/
 
 /**
- * @brief ³õÊ¼»¯ESP ATÄ£¿é
+ * @brief ï¿½ï¿½Ê¼ï¿½ï¿½ESP ATÄ£ï¿½ï¿½
  * 
- * ³õÊ¼»¯Á÷³Ì£º
- * 1. Çå³ýUART´íÎó±êÖ¾
- * 2. µÈ´ýÄ£¿éÉÏµçÎÈ¶¨£¨5Ãë£©
- * 3. ×Ô¶¯¼ì²â²¨ÌØÂÊ£¨µ±Ç°¹Ì¶¨115200£©
- * 4. ·¢ËÍATÖ¸Áî²âÊÔÍ¨ÐÅ
- * 5. ¸´Î»Ä£¿é
- * 6. µÈ´ýÄ£¿éÖØÆôÍê³É
- * 7. ¹Ø±Õ»ØÏÔ£¨ATE0£©
+ * ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Ì£ï¿½
+ * 1. ï¿½ï¿½ï¿½UARTï¿½ï¿½ï¿½ï¿½ï¿½Ö¾
+ * 2. ï¿½È´ï¿½Ä£ï¿½ï¿½ï¿½Ïµï¿½ï¿½È¶ï¿½ï¿½ï¿½5ï¿½ë£©
+ * 3. ï¿½Ô¶ï¿½ï¿½ï¿½â²¨ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½Ç°ï¿½Ì¶ï¿½115200ï¿½ï¿½
+ * 4. ï¿½ï¿½ï¿½ï¿½ATÖ¸ï¿½ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½
+ * 5. ï¿½ï¿½Î»Ä£ï¿½ï¿½
+ * 6. ï¿½È´ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * 7. ï¿½Ø±Õ»ï¿½ï¿½Ô£ï¿½ATE0ï¿½ï¿½
  * 
- * @return true ³õÊ¼»¯³É¹¦
- * @return false ³õÊ¼»¯Ê§°Ü
+ * @return true ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½É¹ï¿½
+ * @return false ï¿½ï¿½Ê¼ï¿½ï¿½Ê§ï¿½ï¿½
  * 
- * @note ³õÊ¼»¯¹ý³ÌÔ¼Ðè15Ãë
+ * @note ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½15ï¿½ï¿½
  */
 bool esp_at_init(void)
 {
@@ -279,13 +279,15 @@ bool esp_at_init(void)
 
     HAL_Delay(5000);
 
-    const uint32_t baud_rates[] = {115200};
-    
-    for (int i = 0; i < 1; i++)
+    const uint32_t baud_rates[] = {115200, 57600, 38400, 9600, 74880, 230400};
+
+    for (uint32_t i = 0; i < ARRAY_SIZE(baud_rates); i++)
     {
+        printf("[AT] probing baud: %lu\n", baud_rates[i]);
         huart2.Init.BaudRate = baud_rates[i];
         if (HAL_UART_Init(&huart2) != HAL_OK)
         {
+            printf("[AT] uart init failed at %lu\n", baud_rates[i]);
             continue;
         }
         
@@ -299,31 +301,33 @@ bool esp_at_init(void)
             }
         }
         
-        esp_at_usart_write("AT");
-        
-        start = HAL_GetTick();
-        rxlen = 0;
-        
-        while ((HAL_GetTick() - start) < 3000 && rxlen < sizeof(rxbuf) - 1)
+        for (uint8_t retry = 0; retry < 3; retry++)
         {
-            if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+            esp_at_usart_write("AT");
+
+            start = HAL_GetTick();
+            rxlen = 0;
+
+            while ((HAL_GetTick() - start) < 1200 && rxlen < sizeof(rxbuf) - 1)
             {
-                uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
-                if (rxlen < sizeof(rxbuf) - 1) {
-                    rxbuf[rxlen++] = data;
+                if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
+                {
+                    uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
+                    if (rxlen < sizeof(rxbuf) - 1) {
+                        rxbuf[rxlen++] = data;
+                    }
                 }
             }
+
+            rxbuf[rxlen] = '\0';
+            if (strstr((char*)rxbuf, "OK") != NULL || strstr((char*)rxbuf, "ERROR") != NULL || strstr((char*)rxbuf, "ready") != NULL)
+            {
+                printf("[AT] baud locked: %lu\n", baud_rates[i]);
+                goto baud_found;
+            }
         }
-        
-        if (strstr((char*)rxbuf, "OK") != NULL)
-        {
-            goto baud_found;
-        }
-        
-        if (strstr((char*)rxbuf, "ERROR") != NULL)
-        {
-            goto baud_found;
-        }
+
+        printf("[AT] no valid response at %lu\n", baud_rates[i]);
     }
     
     return false;
@@ -359,18 +363,18 @@ at_ok:
 }
 
 /*============================================================================*/
-/*                             WiFi¹¦ÄÜº¯Êý                                   */
+/*                             WiFiï¿½ï¿½ï¿½Üºï¿½ï¿½ï¿½                                   */
 /*============================================================================*/
 
 /**
- * @brief ³õÊ¼»¯WiFiÐ­ÒéÕ»
+ * @brief ï¿½ï¿½Ê¼ï¿½ï¿½WiFiÐ­ï¿½ï¿½Õ»
  * 
- * ÉèÖÃWiFi¹¤×÷Ä£Ê½ÎªStationÄ£Ê½£¨¿Í»§¶ËÄ£Ê½£©
+ * ï¿½ï¿½ï¿½ï¿½WiFiï¿½ï¿½ï¿½ï¿½Ä£Ê½ÎªStationÄ£Ê½ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½
  * 
- * @return true ÉèÖÃ³É¹¦
- * @return false ÉèÖÃÊ§°Ü
+ * @return true ï¿½ï¿½ï¿½Ã³É¹ï¿½
+ * @return false ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  * 
- * @note AT+CWMODE=1 ±íÊ¾StationÄ£Ê½
+ * @note AT+CWMODE=1 ï¿½ï¿½Ê¾StationÄ£Ê½
  */
 bool esp_at_wifi_init(void)
 {
@@ -378,21 +382,31 @@ bool esp_at_wifi_init(void)
 }
 
 /**
- * @brief Á¬½Óµ½WiFiÈÈµã
+ * @brief ï¿½ï¿½ï¿½Óµï¿½WiFiï¿½Èµï¿½
  * 
- * @param ssid WiFiÍøÂçÃû³Æ
- * @param pwd WiFiÃÜÂë
- * @param mac Ä¿±êAPµÄMACµØÖ·£¨¿ÉÑ¡£¬ÓÃÓÚÖ¸¶¨Á¬½ÓÌØ¶¨AP£©
- * @return true Á¬½Ó³É¹¦
- * @return false Á¬½ÓÊ§°Ü
+ * @param ssid WiFiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @param pwd WiFiï¿½ï¿½ï¿½ï¿½
+ * @param mac Ä¿ï¿½ï¿½APï¿½ï¿½MACï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ø¶ï¿½APï¿½ï¿½
+ * @return true ï¿½ï¿½ï¿½Ó³É¹ï¿½
+ * @return false ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  * 
- * @note Á¬½Ó³¬Ê±Ê±¼äÎª20Ãë
- * @note Èç¹ûssid»òpwdÎªNULL£¬Ö±½Ó·µ»ØÊ§°Ü
+ * @note ï¿½ï¿½ï¿½Ó³ï¿½Ê±Ê±ï¿½ï¿½Îª20ï¿½ï¿½
+ * @note ï¿½ï¿½ï¿½ssidï¿½ï¿½pwdÎªNULLï¿½ï¿½Ö±ï¿½Ó·ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  */
 bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
 {
     if (ssid == NULL || pwd == NULL)
         return false;
+
+    /* Some firmwares return non-OK when already connected, so pre-check first. */
+    esp_wifi_info_t current = {0};
+    if (esp_at_get_wifi_info(&current) && current.connected)
+    {
+        if (strcmp(current.ssid, ssid) == 0)
+        {
+            return true;
+        }
+    }
     
     char cmd[128];
     int len = snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"", ssid, pwd);
@@ -408,19 +422,34 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
         }
     }
     
-    return esp_at_write_command(cmd, 20000);
+    if (esp_at_write_command(cmd, 30000))
+    {
+        return true;
+    }
+
+    /* Fallback: connection may still be up even if CWJAP did not return OK. */
+    memset(&current, 0, sizeof(current));
+    if (esp_at_get_wifi_info(&current) && current.connected)
+    {
+        if (strcmp(current.ssid, ssid) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
- * @brief ½âÎöWiFiÁ¬½ÓÐÅÏ¢ÏìÓ¦
+ * @brief ï¿½ï¿½ï¿½ï¿½WiFiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ó¦
  * 
- * ½âÎöAT+CWJAP?Ö¸ÁîµÄÏìÓ¦£¬¸ñÊ½ÈçÏÂ£º
+ * ï¿½ï¿½ï¿½ï¿½AT+CWJAP?Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½Â£ï¿½
  * +CWJAP:"SSID","BSSID",Channel,RSSI
  * 
- * @param response ÏìÓ¦×Ö·û´®
- * @param info Êä³öµÄWiFiÐÅÏ¢½á¹¹Ìå
- * @return true ½âÎö³É¹¦
- * @return false ½âÎöÊ§°Ü
+ * @param response ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½
+ * @param info ï¿½ï¿½ï¿½ï¿½ï¿½WiFiï¿½ï¿½Ï¢ï¿½á¹¹ï¿½ï¿½
+ * @return true ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½
+ * @return false ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  */
 static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 {
@@ -435,13 +464,13 @@ static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 }
 
 /**
- * @brief »ñÈ¡µ±Ç°WiFiÁ¬½ÓÐÅÏ¢
+ * @brief ï¿½ï¿½È¡ï¿½ï¿½Ç°WiFiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
  * 
- * @param info Êä³öµÄWiFiÐÅÏ¢½á¹¹ÌåÖ¸Õë
- * @return true »ñÈ¡³É¹¦
- * @return false Î´Á¬½Ó»ò»ñÈ¡Ê§°Ü
+ * @param info ï¿½ï¿½ï¿½ï¿½ï¿½WiFiï¿½ï¿½Ï¢ï¿½á¹¹ï¿½ï¿½Ö¸ï¿½ï¿½
+ * @return true ï¿½ï¿½È¡ï¿½É¹ï¿½
+ * @return false Î´ï¿½ï¿½ï¿½Ó»ï¿½ï¿½È¡Ê§ï¿½ï¿½
  * 
- * @note ´Ëº¯ÊýÊÇÏß³Ì°²È«µÄ£¬ÄÚ²¿Ê¹ÓÃÁË»¥³âËø
+ * @note ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì°ï¿½È«ï¿½Ä£ï¿½ï¿½Ú²ï¿½Ê¹ï¿½ï¿½ï¿½Ë»ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 bool esp_at_get_wifi_info(esp_wifi_info_t *info)
 {
@@ -466,10 +495,10 @@ bool esp_at_get_wifi_info(esp_wifi_info_t *info)
 }
 
 /**
- * @brief ¼ì²éWiFiÊÇ·ñÒÑÁ¬½Ó
+ * @brief ï¿½ï¿½ï¿½WiFiï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * @return true ÒÑÁ¬½Ó
- * @return false Î´Á¬½Ó
+ * @return true ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @return false Î´ï¿½ï¿½ï¿½ï¿½
  */
 bool wifi_is_connected(void)
 {
@@ -482,21 +511,21 @@ bool wifi_is_connected(void)
 }
 
 /*============================================================================*/
-/*                             SNTPÊ±¼äÍ¬²½º¯Êý                               */
+/*                             SNTPÊ±ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                               */
 /*============================================================================*/
 
 /**
- * @brief ³õÊ¼»¯SNTPÊ±¼äÍ¬²½·þÎñ
+ * @brief ï¿½ï¿½Ê¼ï¿½ï¿½SNTPÊ±ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  * 
- * ÅäÖÃSNTP·þÎñÆ÷£º
- * - cn.pool.ntp.org£¨ÖÐ¹úNTP³Ø£©
- * - ntp.aliyun.com£¨°¢ÀïÔÆNTP£©
- * - ntp.tencent.com£¨ÌÚÑ¶ÔÆNTP£©
+ * ï¿½ï¿½ï¿½ï¿½SNTPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * - cn.pool.ntp.orgï¿½ï¿½ï¿½Ð¹ï¿½NTPï¿½Ø£ï¿½
+ * - ntp.aliyun.comï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NTPï¿½ï¿½
+ * - ntp.tencent.comï¿½ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½NTPï¿½ï¿½
  * 
- * Ê±ÇøÉèÖÃÎª¶«°ËÇø£¨±±¾©Ê±¼ä£¬UTC+8£©
+ * Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£¬UTC+8ï¿½ï¿½
  * 
- * @return true ÅäÖÃ³É¹¦
- * @return false ÅäÖÃÊ§°Ü
+ * @return true ï¿½ï¿½ï¿½Ã³É¹ï¿½
+ * @return false ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  */
 bool esp_at_sntp_init(void)
 {
@@ -505,10 +534,10 @@ bool esp_at_sntp_init(void)
 }
 
 /**
- * @brief ½«ÔÂ·Ý×Ö·û´®×ª»»ÎªÊý×Ö
+ * @brief ï¿½ï¿½ï¿½Â·ï¿½ï¿½Ö·ï¿½ï¿½ï¿½×ªï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
  * 
- * @param month_str ÔÂ·Ý×Ö·û´®£¨Èç"Jan", "Feb"µÈ£©
- * @return uint8_t ÔÂ·ÝÊý×Ö£¨1-12£©£¬ÎÞÐ§ÊäÈë·µ»Ø0
+ * @param month_str ï¿½Â·ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"Jan", "Feb"ï¿½È£ï¿½
+ * @return uint8_t ï¿½Â·ï¿½ï¿½ï¿½ï¿½Ö£ï¿½1-12ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ë·µï¿½ï¿½0
  */
 static uint8_t month_str_to_num(const char *month_str)
 {
@@ -521,10 +550,10 @@ static uint8_t month_str_to_num(const char *month_str)
 }
 
 /**
- * @brief ½«ÐÇÆÚ×Ö·û´®×ª»»ÎªÊý×Ö
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½×ªï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
  * 
- * @param weekday_str ÐÇÆÚ×Ö·û´®£¨Èç"Mon", "Tue"µÈ£©
- * @return uint8_t ÐÇÆÚÊý×Ö£¨1-7£¬1=ÖÜÒ»£©£¬ÎÞÐ§ÊäÈë·µ»Ø0
+ * @param weekday_str ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"Mon", "Tue"ï¿½È£ï¿½
+ * @return uint8_t ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö£ï¿½1-7ï¿½ï¿½1=ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð§ï¿½ï¿½ï¿½ë·µï¿½ï¿½0
  */
 static uint8_t weekday_str_to_num(const char *weekday_str)
 {
@@ -536,15 +565,15 @@ static uint8_t weekday_str_to_num(const char *weekday_str)
 }
 
 /**
- * @brief ½âÎöSNTPÊ±¼äÏìÓ¦
+ * @brief ï¿½ï¿½ï¿½ï¿½SNTPÊ±ï¿½ï¿½ï¿½ï¿½Ó¦
  * 
- * ½âÎöAT+CIPSNTPTIME?Ö¸ÁîµÄÏìÓ¦£¬¸ñÊ½ÈçÏÂ£º
+ * ï¿½ï¿½ï¿½ï¿½AT+CIPSNTPTIME?Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½Â£ï¿½
  * +CIPSNTPTIME:Thu Jan 01 08:00:00 1970
  * 
- * @param response ÏìÓ¦×Ö·û´®
- * @param date Êä³öµÄÈÕÆÚÊ±¼ä½á¹¹Ìå
- * @return true ½âÎö³É¹¦
- * @return false ½âÎöÊ§°Ü
+ * @param response ï¿½ï¿½Ó¦ï¿½Ö·ï¿½ï¿½ï¿½
+ * @param date ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½á¹¹ï¿½ï¿½
+ * @return true ï¿½ï¿½ï¿½ï¿½ï¿½É¹ï¿½
+ * @return false ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
  */
 static bool parse_cipsntptime_response(const char *response, esp_date_time_t *date)
 {
@@ -574,14 +603,14 @@ static bool parse_cipsntptime_response(const char *response, esp_date_time_t *da
 }
 
 /**
- * @brief ´ÓSNTP·þÎñÆ÷»ñÈ¡µ±Ç°Ê±¼ä
+ * @brief ï¿½ï¿½SNTPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½ï¿½Ç°Ê±ï¿½ï¿½
  * 
- * @param date Êä³öµÄÈÕÆÚÊ±¼ä½á¹¹ÌåÖ¸Õë
- * @return true »ñÈ¡³É¹¦
- * @return false »ñÈ¡Ê§°Ü
+ * @param date ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½á¹¹ï¿½ï¿½Ö¸ï¿½ï¿½
+ * @return true ï¿½ï¿½È¡ï¿½É¹ï¿½
+ * @return false ï¿½ï¿½È¡Ê§ï¿½ï¿½
  * 
- * @note ÐèÒªÏÈµ÷ÓÃesp_at_sntp_init()³õÊ¼»¯SNTP·þÎñ
- * @note ÐèÒªWiFiÒÑÁ¬½Ó
+ * @note ï¿½ï¿½Òªï¿½Èµï¿½ï¿½ï¿½esp_at_sntp_init()ï¿½ï¿½Ê¼ï¿½ï¿½SNTPï¿½ï¿½ï¿½ï¿½
+ * @note ï¿½ï¿½ÒªWiFiï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 bool esp_at_sntp_get_time(esp_date_time_t *date)
 {
@@ -595,18 +624,18 @@ bool esp_at_sntp_get_time(esp_date_time_t *date)
 }
 
 /*============================================================================*/
-/*                             HTTP¿Í»§¶Ëº¯Êý                                 */
+/*                             HTTPï¿½Í»ï¿½ï¿½Ëºï¿½ï¿½ï¿½                                 */
 /*============================================================================*/
 
 /**
- * @brief ·¢ËÍHTTP GETÇëÇó
+ * @brief ï¿½ï¿½ï¿½ï¿½HTTP GETï¿½ï¿½ï¿½ï¿½
  * 
- * @param url ÇëÇóµÄURLµØÖ·
- * @return const char* ÏìÓ¦ÄÚÈÝÖ¸Õë£¬Ê§°Ü·µ»ØNULL
+ * @param url ï¿½ï¿½ï¿½ï¿½ï¿½URLï¿½ï¿½Ö·
+ * @return const char* ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ë£¬Ê§ï¿½Ü·ï¿½ï¿½ï¿½NULL
  * 
- * @note URL³¤¶È²»ÄÜ³¬¹ý512×Ö½Ú
- * @note ÇëÇó³¬Ê±Ê±¼äÎª15Ãë
- * @note ·µ»ØµÄÖ¸ÕëÖ¸ÏòÄÚ²¿»º³åÇø£¬ÏÂ´ÎÇëÇó»á¸²¸ÇÄÚÈÝ
+ * @note URLï¿½ï¿½ï¿½È²ï¿½ï¿½Ü³ï¿½ï¿½ï¿½512ï¿½Ö½ï¿½
+ * @note ï¿½ï¿½ï¿½ï¿½Ê±Ê±ï¿½ï¿½Îª15ï¿½ï¿½
+ * @note ï¿½ï¿½ï¿½Øµï¿½Ö¸ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â´ï¿½ï¿½ï¿½ï¿½ï¿½á¸²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
  */
 const char *esp_at_http_get(const char *url)
 {

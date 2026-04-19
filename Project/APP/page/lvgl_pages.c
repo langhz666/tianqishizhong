@@ -920,7 +920,7 @@ static void create_status_bar(void)
     
     status_wifi_label = lv_label_create(status_bar);
     lv_label_set_text(status_wifi_label, WIFI_SSID);
-    lv_obj_set_style_text_color(status_wifi_label, lv_color_make(0xCC, 0xCC, 0xCC), LV_PART_MAIN);
+    lv_obj_set_style_text_color(status_wifi_label, lv_color_white(), LV_PART_MAIN);
     lv_obj_set_style_pad_left(status_wifi_label, 5, LV_PART_MAIN);
 }
 
@@ -1361,7 +1361,7 @@ static void create_settings_page(void)
     lv_obj_t *hint = lv_label_create(settings_page);
     lv_label_set_text(hint, LV_SYMBOL_LEFT " Swipe to switch " LV_SYMBOL_RIGHT);
     lv_obj_set_style_text_font(hint, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_set_style_text_color(hint, lv_color_make(0x88, 0x88, 0x88), LV_PART_MAIN);
+    lv_obj_set_style_text_color(hint, lv_color_white(), LV_PART_MAIN);
     lv_obj_align(hint, LV_ALIGN_BOTTOM_MID, 0, -10);
 }
 
