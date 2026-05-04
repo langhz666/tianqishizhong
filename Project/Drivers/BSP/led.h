@@ -42,14 +42,6 @@ void led_off(uint8_t led);
 void led_all_off(void);
 
 /**
- * @brief 呼吸灯闪烁效果
- *
- * @param period 周期
- * @param duty 占空比
- */
-void led_breath(uint32_t period, uint32_t duty);
-
-/**
  * @brief 切换LED状态
  *
  * @param led LED编号（0=LED0, 1=LED1）

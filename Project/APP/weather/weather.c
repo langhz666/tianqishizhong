@@ -81,7 +81,7 @@ bool parse_seniverse_response(const char *response, weather_info_t *info)
     const char *location_path_response = strstr(location_response, "\"path\":");
     if (location_path_response)
     {
-        sscanf(location_path_response, "\"path\": \"%128[^\"]\"", info->location);
+        sscanf(location_path_response, "\"path\": \"%127[^\"]\"", info->location);
     }
 
     const char *daily_response = strstr(response, "\"daily\":");

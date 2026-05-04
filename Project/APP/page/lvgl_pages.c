@@ -427,10 +427,10 @@ static void draw_weather_icon(int code)
         draw_weather_icon_cloudy(weather_icon_canvas, icon_color);
     } else if (code == 5 || code == 6 || code == 7 || code == 8) {
         draw_weather_icon_cloudy(weather_icon_canvas, icon_color);
-    } else if (code >= 10 && code <= 19) {
-        draw_weather_icon_rainy(weather_icon_canvas, icon_color);
     } else if (code == 11 || code == 12) {
         draw_weather_icon_thunder(weather_icon_canvas, icon_color);
+    } else if (code >= 10 && code <= 19) {
+        draw_weather_icon_rainy(weather_icon_canvas, icon_color);
     } else if (code >= 20 && code <= 25) {
         draw_weather_icon_snowy(weather_icon_canvas, icon_color);
     } else {
@@ -750,7 +750,7 @@ void wifi_page_display(void)
     lv_label_set_text(ssid_label, WIFI_SSID); 
     lv_obj_set_style_text_color(ssid_label, COLOR_TEXT_PRIMARY, LV_PART_MAIN);
     lv_obj_set_style_text_font(ssid_label, &lv_font_montserrat_16, LV_PART_MAIN);
-    lv_obj_align(icon, LV_ALIGN_CENTER, 0, -10);
+    lv_obj_align(ssid_label, LV_ALIGN_CENTER, 0, -10);
     lv_obj_set_style_opa(ssid_label, 0, LV_PART_MAIN);
 
     // 3. 当前连接状态的文本提示
@@ -1036,14 +1036,20 @@ static void create_time_page(void)
     lv_obj_set_style_pad_all(outdoor_card, 0, LV_PART_MAIN);
     lv_obj_clear_flag(outdoor_card, LV_OBJ_FLAG_SCROLLABLE);
 
+    /* 释放旧buffer防止内存泄漏 */
+    if (weather_icon_buf) {
+        lv_mem_free(weather_icon_buf);
+        weather_icon_buf = NULL;
+    }
+
     weather_icon_buf = lv_mem_alloc(WEATHER_ICON_SIZE * WEATHER_ICON_SIZE * sizeof(lv_color_t));
     if (weather_icon_buf) {
         memset(weather_icon_buf, 0, WEATHER_ICON_SIZE * WEATHER_ICON_SIZE * sizeof(lv_color_t));
+
+        weather_icon_canvas = lv_canvas_create(outdoor_card);
+        lv_canvas_set_buffer(weather_icon_canvas, weather_icon_buf, WEATHER_ICON_SIZE, WEATHER_ICON_SIZE, LV_IMG_CF_TRUE_COLOR);
+        lv_obj_align(weather_icon_canvas, LV_ALIGN_RIGHT_MID, -8, 0);
     }
-    
-    weather_icon_canvas = lv_canvas_create(outdoor_card);
-    lv_canvas_set_buffer(weather_icon_canvas, weather_icon_buf, WEATHER_ICON_SIZE, WEATHER_ICON_SIZE, LV_IMG_CF_TRUE_COLOR);
-    lv_obj_align(weather_icon_canvas, LV_ALIGN_RIGHT_MID, -8, 0);
     
     draw_weather_icon(0);
 

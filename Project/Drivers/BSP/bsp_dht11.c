@@ -201,7 +201,7 @@ uint8_t dht11_read_data(uint8_t *temp, uint8_t *humi)
         if ((buf[0] + buf[1] + buf[2] + buf[3]) == buf[4])
         {
             /* 检查数据范围是否合法 */
-            if (buf[2] >= 0 && buf[2] <= 50 && buf[0] >= 20 && buf[0] <= 90)
+            if (buf[2] <= 50 && buf[0] >= 20 && buf[0] <= 90)
             {
                 *humi = buf[0];  /* 湿度整数部分 */
                 *temp = buf[2];  /* 温度整数部分 */

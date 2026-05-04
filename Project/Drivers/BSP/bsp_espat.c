@@ -528,8 +528,7 @@ bool wifi_is_connected(void)
  */
 bool esp_at_sntp_init(void)
 {
-    esp_at_write_command("AT+CIPSNTPCFG=1,8,\"cn.pool.ntp.org\",\"ntp.aliyun.com\",\"ntp.tencent.com\"", 2000);
-    return true;
+    return esp_at_write_command("AT+CIPSNTPCFG=1,8,\"cn.pool.ntp.org\",\"ntp.aliyun.com\",\"ntp.tencent.com\"", 2000);
 }
 
 /**

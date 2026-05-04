@@ -114,9 +114,11 @@ static void _bsp_rtc_get_time_once(rtc_date_time_t *date_time)
 void bsp_rtc_set_time(const rtc_date_time_t *date_time)
 {
     rtc_date_time_t rtime;
+    int retry = 0;
     do {
         _bsp_rtc_set_time_once(date_time);
         _bsp_rtc_get_time_once(&rtime);
+        if (++retry >= 100) break;
     } while (date_time->second != rtime.second);
 }
 
@@ -137,9 +139,11 @@ void bsp_rtc_set_time(const rtc_date_time_t *date_time)
 void bsp_rtc_get_time(rtc_date_time_t *date_time)
 {
     rtc_date_time_t time1, time2;
+    int retry = 0;
     do {
         _bsp_rtc_get_time_once(&time1);
         _bsp_rtc_get_time_once(&time2);
+        if (++retry >= 100) break;
     } while (memcmp(&time1, &time2, sizeof(rtc_date_time_t)) != 0);
 
     memcpy(date_time, &time1, sizeof(rtc_date_time_t));

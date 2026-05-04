@@ -61,26 +61,6 @@ void led_all_off(void)
 }
 
 /**
- * @brief 软件模拟呼吸灯效果（忙等实现）
- *
- * 通过忙等循环控制LED亮灭时间比例，非标准PWM实现。
- * LED点亮持续 duty 次循环，熄灭持续 (period - duty) 次循环。
- *
- * @param period 总周期（忙等循环次数）
- * @param duty   LED点亮时间（忙等循环次数，应小于period）
- */
-void led_breath(uint32_t period, uint32_t duty)
-{
-    int a = 0;
-    led_set(0, 1);
-    led_set(1, 1);
-    while (a++ < duty);
-    led_set(0, 0);
-    led_set(1, 0);
-    while (a++ < period);
-}
-
-/**
  * @brief 切换LED状态
  *
  * @param led LED编号（0=LED0, 1=LED1）

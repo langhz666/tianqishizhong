@@ -78,7 +78,11 @@ uint8_t Key_Scan(uint8_t mode)
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    HAL_Delay(20); /* 简单的阻塞式消抖 */
+    /* 时间戳防抖：100ms内的重复中断直接忽略 */
+    static uint32_t last_key_tick = 0;
+    uint32_t now = HAL_GetTick();
+    if (now - last_key_tick < 100) return;
+    last_key_tick = now;
 
     switch(GPIO_Pin)
     {
