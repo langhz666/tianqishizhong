@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    stm32f4xx_hal_timebase_tim.c
-  * @brief   HAL time base based on the hardware TIM.
+  * @brief   基于硬件定时器的HAL时基配置
   ******************************************************************************
   * @attention
   *
@@ -30,13 +30,13 @@ TIM_HandleTypeDef        htim1;
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  This function configures the TIM1 as a time base source.
-  *         The time source is configured  to have 1ms time base with a dedicated
-  *         Tick interrupt priority.
-  * @note   This function is called  automatically at the beginning of program after
-  *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig().
-  * @param  TickPriority: Tick interrupt priority.
-  * @retval HAL status
+  * @brief  配置TIM1作为HAL时基源
+  *
+  * 将TIM1配置为1ms时基，替代SysTick作为HAL的时间基准。
+  * 此函数在HAL_Init()或HAL_RCC_ClockConfig()时自动调用。
+  *
+  * @param  TickPriority 定时器中断优先级
+  * @retval HAL状态
   */
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
@@ -48,26 +48,26 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 
   HAL_StatusTypeDef     status;
 
-  /* Enable TIM1 clock */
+  /* 使能TIM1时钟 */
   __HAL_RCC_TIM1_CLK_ENABLE();
 
-  /* Get clock configuration */
+  /* 获取时钟配置 */
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
 
-  /* Compute TIM1 clock */
+  /* 计算TIM1时钟频率（APB2定时器时钟 = 2 x APB2时钟） */
       uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
 
-  /* Compute the prescaler value to have TIM1 counter clock equal to 1MHz */
+  /* 计算预分频值，使TIM1计数器时钟为1MHz */
   uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
 
-  /* Initialize TIM1 */
+  /* 初始化TIM1 */
   htim1.Instance = TIM1;
 
-  /* Initialize TIMx peripheral as follow:
-   * Period = [(TIM1CLK/1000) - 1]. to have a (1/1000) s time base.
-   * Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
-   * ClockDivision = 0
-   * Counter direction = Up
+  /* TIM1参数配置：
+   * 周期 = [(TIM1CLK/1000) - 1]，产生1ms时基
+   * 预分频 = (uwTimclock/1000000 - 1)，计数器时钟1MHz
+   * 时钟分频 = 0
+   * 计数方向 = 向上
    */
   htim1.Init.Period = (1000000U / 1000U) - 1U;
   htim1.Init.Prescaler = uwPrescalerValue;
@@ -78,16 +78,16 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   status = HAL_TIM_Base_Init(&htim1);
   if (status == HAL_OK)
   {
-    /* Start the TIM time Base generation in interrupt mode */
+    /* 启动定时器中断模式 */
     status = HAL_TIM_Base_Start_IT(&htim1);
     if (status == HAL_OK)
     {
-    /* Enable the TIM1 global Interrupt */
+    /* 使能TIM1全局中断 */
         HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
-      /* Configure the SysTick IRQ priority */
+      /* 配置SysTick中断优先级 */
       if (TickPriority < (1UL << __NVIC_PRIO_BITS))
       {
-        /* Configure the TIM IRQ priority */
+        /* 配置TIM中断优先级 */
         HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, TickPriority, 0U);
         uwTickPrio = TickPriority;
       }
@@ -98,31 +98,29 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
     }
   }
 
- /* Return function status */
+  /* 返回函数状态 */
   return status;
 }
 
 /**
-  * @brief  Suspend Tick increment.
-  * @note   Disable the tick increment by disabling TIM1 update interrupt.
-  * @param  None
-  * @retval None
+  * @brief  暂停Tick递增
+  *
+  * 禁用TIM1更新中断，暂停HAL时基计数。
   */
 void HAL_SuspendTick(void)
 {
-  /* Disable TIM1 update Interrupt */
+  /* 禁用TIM1更新中断 */
   __HAL_TIM_DISABLE_IT(&htim1, TIM_IT_UPDATE);
 }
 
 /**
-  * @brief  Resume Tick increment.
-  * @note   Enable the tick increment by Enabling TIM1 update interrupt.
-  * @param  None
-  * @retval None
+  * @brief  恢复Tick递增
+  *
+  * 使能TIM1更新中断，恢复HAL时基计数。
   */
 void HAL_ResumeTick(void)
 {
-  /* Enable TIM1 Update interrupt */
+  /* 使能TIM1更新中断 */
   __HAL_TIM_ENABLE_IT(&htim1, TIM_IT_UPDATE);
 }
 

@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Main program body
+  * @brief          : 天气时钟系统主程序入口
   ******************************************************************************
   * @attention
   *
@@ -74,12 +74,31 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/**
+ * @brief FreeRTOS断言失败回调
+ *
+ * 当FreeRTOS内部断言检查失败时调用，禁用中断并进入死循环
+ *
+ * @param file 断言失败的文件名
+ * @param line 断言失败的行号
+ */
 void vAssertCalled(const char *file, int line)
 {
+    (void)file;
+    (void)line;
     taskDISABLE_INTERRUPTS();
     for (;;);
 }
 
+/**
+ * @brief FreeRTOS栈溢出钩子函数
+ *
+ * 当检测到任务栈溢出时调用，禁用中断并进入死循环
+ *
+ * @param xTask 发生溢出的任务句柄
+ * @param pcTaskName 发生溢出的任务名称
+ */
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
     (void)xTask;
@@ -88,6 +107,11 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
     for (;;);
 }
 
+/**
+ * @brief FreeRTOS内存分配失败钩子函数
+ *
+ * 当pvPortMalloc()分配内存失败时调用，禁用中断并进入死循环
+ */
 void vApplicationMallocFailedHook(void)
 {
     taskDISABLE_INTERRUPTS();
@@ -96,8 +120,17 @@ void vApplicationMallocFailedHook(void)
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
+  * @brief  应用程序入口函数
+  *
+  * 系统启动流程：
+  * 1. HAL库初始化（Flash预取、SysTick配置）
+  * 2. 系统时钟配置（HSE 8MHz -> PLL -> 168MHz）
+  * 3. 外设初始化（GPIO、UART、FSMC、RTC）
+  * 4. 驱动初始化（DWT延时、DHT11、LCD、LVGL）
+  * 5. 显示欢迎页面
+  * 6. 启动FreeRTOS调度器
+  *
+  * @retval int 正常情况下不会返回
   */
 int main(void)
 {
@@ -108,59 +141,59 @@ int main(void)
 
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  /* 复位所有外设，初始化Flash接口和SysTick定时器 */
   HAL_Init();
 
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
-  /* Configure the system clock */
+  /* 配置系统时钟 */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
+  /* 初始化所有配置的外设 */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
-  MX_FSMC_Init();
-  MX_USART2_UART_Init();
-  MX_RTC_Init();
+  MX_USART1_UART_Init();    /* USART1: 调试串口 (PA9/PA10, 115200) */
+  MX_FSMC_Init();            /* FSMC: LCD数据总线 (Bank1 NE4, 16bit) */
+  MX_USART2_UART_Init();    /* USART2: ESP模块通信 (PA2/PA3, 115200) */
+  MX_RTC_Init();             /* RTC: 实时时钟 (LSE 32.768kHz) */
+
   /* USER CODE BEGIN 2 */
   printf("[MAIN] Hardware init complete\n");
   printf("[MAIN] SystemCoreClock = %lu\n", SystemCoreClock);
-  
+
   DWT_Delay_Init();
   printf("[MAIN] DWT init done\n");
-  
+
   dht11_init();
   printf("[MAIN] DHT11 init done\n");
-  
+
   lcd_init();
   printf("[MAIN] LCD init done\n");
-  
+
   lv_init();
   lv_port_disp_init();
   lv_port_indev_init();
   printf("[MAIN] LVGL init done\n");
-  
+
   welcome_page_display();
   printf("[MAIN] Welcome page displayed\n");
 
   /* USER CODE END 2 */
 
-  /* Init scheduler */
-  osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
+  /* 初始化FreeRTOS调度器 */
+  osKernelInitialize();
   MX_FREERTOS_Init();
 
-  /* Start scheduler */
+  /* 启动调度器（此函数不会返回） */
   osKernelStart();
 
-  /* We should never get here as control is now taken by the scheduler */
+  /* 正常情况下不会执行到这里，控制权已交给调度器 */
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
@@ -172,7 +205,16 @@ int main(void)
 }
 
 /**
-  * @brief System Clock Configuration
+  * @brief 系统时钟配置
+  *
+  * 时钟树配置：
+  * - HSE (8MHz外部晶振) 作为PLL输入
+  * - PLLM=4, PLLN=168, PLLP=2 -> SYSCLK=168MHz
+  * - AHB分频=1 -> HCLK=168MHz
+  * - APB1分频=4 -> PCLK1=42MHz (Timer=84MHz)
+  * - APB2分频=2 -> PCLK2=84MHz (Timer=168MHz)
+  * - LSE (32.768kHz外部晶振) 用于RTC
+  *
   * @retval None
   */
 void SystemClock_Config(void)
@@ -180,14 +222,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
+  /** 配置主内部稳压器输出电压 */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+  /** 初始化RCC振荡器 */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
@@ -202,8 +241,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
+  /** 初始化CPU、AHB和APB总线时钟 */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -222,11 +260,12 @@ void SystemClock_Config(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM1 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
+  * @brief  定时器周期溢出回调函数（非阻塞模式）
+  *
+  * 当TIM1中断发生时，在HAL_TIM_IRQHandler()中直接调用此函数
+  * 递增全局变量"uwTick"作为应用时间基准
+  *
+  * @param  htim : TIM句柄
   * @retval None
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -244,13 +283,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 
 /**
-  * @brief  This function is executed in case of error occurrence.
+  * @brief  错误处理函数
+  *
+  * 当发生不可恢复的错误时调用，禁用中断并进入死循环
+  *
   * @retval None
   */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
@@ -259,17 +300,16 @@ void Error_Handler(void)
 }
 #ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
+  * @brief  断言失败报告函数
+  *
+  * @param  file: 源文件名指针
+  * @param  line: 断言失败的行号
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* 用户可在此添加自己的实现来报告文件名和行号 */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

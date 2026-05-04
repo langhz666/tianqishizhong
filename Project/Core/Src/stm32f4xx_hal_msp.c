@@ -2,8 +2,7 @@
 /**
   ******************************************************************************
   * @file         stm32f4xx_hal_msp.c
-  * @brief        This file provides code for the MSP Initialization
-  *               and de-Initialization codes.
+  * @brief        MSP初始化与反初始化代码
   ******************************************************************************
   * @attention
   *
@@ -58,7 +57,7 @@
 
 /* USER CODE END 0 */
 /**
-  * Initializes the Global MSP.
+  * @brief 初始化全局MSP（MCU支持包）
   */
 void HAL_MspInit(void)
 {
@@ -70,8 +69,8 @@ void HAL_MspInit(void)
   __HAL_RCC_SYSCFG_CLK_ENABLE();
   __HAL_RCC_PWR_CLK_ENABLE();
 
-  /* System interrupt init*/
-  /* PendSV_IRQn interrupt configuration */
+  /* 系统中断初始化 */
+  /* PendSV_IRQn中断配置（设为最低优先级，供FreeRTOS使用） */
   HAL_NVIC_SetPriority(PendSV_IRQn, 15, 0);
 
   /* USER CODE BEGIN MspInit 1 */

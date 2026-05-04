@@ -1,30 +1,30 @@
 /**
  * @file weather.c
- * @brief ÌìÆøÊý¾Ý½âÎöÄ£¿é
- * 
- * ±¾ÎÄ¼þÊµÏÖÁË¶ÔÐÄÖªÌìÆø(Seniverse)API·µ»ØµÄJSONÊý¾Ý½øÐÐ½âÎöµÄ¹¦ÄÜ¡£
- * ½âÎöºóµÄÊý¾Ý´æ´¢ÔÚweather_info_t½á¹¹ÌåÖÐ£¬¹©Ö÷³ÌÐòÊ¹ÓÃ¡£
- * 
- * ÐÄÖªÌìÆøDaily API·µ»Ø¸ñÊ½Ê¾Àý£º
+ * @brief å¤©æ°”æ•°æ®è§£æžæ¨¡å—
+ *
+ * æœ¬æ–‡ä»¶å®žçŽ°äº†å¯¹å¿ƒçŸ¥å¤©æ°”(Seniverse)APIè¿”å›žçš„JSONæ•°æ®è¿›è¡Œè§£æžçš„åŠŸèƒ½ã€‚
+ * è§£æžåŽçš„æ•°æ®å­˜å‚¨åˆ°weather_info_tç»“æž„ä½“ä¸­ï¼Œä¾›UIå±‚ä½¿ç”¨ã€‚
+ *
+ * å¿ƒçŸ¥å¤©æ°”Daily APIè¿”å›žæ ¼å¼ç¤ºä¾‹ï¼š
  * {
  *   "results": [{
  *     "location": {
- *       "name": "±±¾©",
- *       "path": "±±¾©,±±¾©,ÖÐ¹ú"
+ *       "name": "è¡¡é˜³",
+ *       "path": "è¡¡é˜³,æ¹–å—,ä¸­å›½"
  *     },
  *     "daily": [{
  *       "date": "2025-04-04",
- *       "text_day": "Çç",
+ *       "text_day": "æ™´",
  *       "code_day": "0",
  *       "high": "26",
  *       "low": "15",
- *       "wind_direction": "±±",
+ *       "wind_direction": "åŒ—",
  *       "wind_speed": "15.0",
  *       "humidity": "60"
  *     }]
  *   }]
  * }
- * 
+ *
  * @author Smart Weather Clock Team
  * @version 1.2.0
  */
@@ -37,104 +37,104 @@
 #include "weather.h"
 
 /**
- * @brief ½âÎöÐÄÖªÌìÆøAPIµÄJSONÏìÓ¦
- * 
- * @param response  JSONÏìÓ¦×Ö·û´®Ö¸Õë
- * @param info      Êä³öµÄÌìÆøÐÅÏ¢½á¹¹ÌåÖ¸Õë
- * @return true     ½âÎö³É¹¦
- * @return false    ½âÎöÊ§°Ü£¨ÊäÈëÎÞÐ§»ò¸ñÊ½´íÎó£©
- * 
- * ½âÎöÁ÷³Ì£º
- * 1. ¼ì²éÊäÈëÓÐÐ§ÐÔ
- * 2. ¶¨Î»"results"½Úµã
- * 3. ½âÎölocationÐÅÏ¢£¨³ÇÊÐÃû³Æ¡¢Â·¾¶£©
- * 4. ½âÎödailyÐÅÏ¢£¨ÌìÆøÃèÊö¡¢´úÂë¡¢ÎÂ¶È¡¢Êª¶È¡¢·çËÙ£©
- * 
- * @note Ê¹ÓÃ¼òµ¥µÄ×Ö·û´®Æ¥Åä¶ø·ÇÍêÕûµÄJSON½âÎöÆ÷£¬
- *       ÊÊÓÃÓÚ×ÊÔ´ÊÜÏÞµÄÇ¶ÈëÊ½»·¾³
+ * @brief è§£æžå¿ƒçŸ¥å¤©æ°”APIçš„JSONå“åº”
+ *
+ * @param response  JSONå“åº”å­—ç¬¦ä¸²æŒ‡é’ˆ
+ * @param info      è¾“å‡ºå¤©æ°”ä¿¡æ¯ç»“æž„ä½“æŒ‡é’ˆ
+ * @return true     è§£æžæˆåŠŸ
+ * @return false    è§£æžå¤±è´¥ï¼ˆå‚æ•°æ— æ•ˆæˆ–æ ¼å¼é”™è¯¯ï¼‰
+ *
+ * è§£æžæµç¨‹ï¼š
+ * 1. éªŒè¯å‚æ•°æœ‰æ•ˆæ€§
+ * 2. å®šä½"results"èŠ‚ç‚¹
+ * 3. è§£æžlocationä¿¡æ¯ï¼ˆåŸŽå¸‚åç§°ã€è·¯å¾„ï¼‰
+ * 4. è§£æždailyä¿¡æ¯ï¼ˆå¤©æ°”æè¿°ã€ä»£ç ã€æ¸©åº¦ã€æ¹¿åº¦ã€é£Žé€Ÿï¼‰
+ *
+ * @note ä½¿ç”¨ç®€å•çš„å­—ç¬¦ä¸²åŒ¹é…æ–¹å¼è§£æžJSONï¼Œæ— éœ€JSONåº“
+ *       é€‚ç”¨äºŽèµ„æºæœ‰é™çš„åµŒå…¥å¼çŽ¯å¢ƒ
  */
 bool parse_seniverse_response(const char *response, weather_info_t *info)
 {
-	if (response == NULL || strlen(response) == 0)
-	{
-		return false;
-	}
-	
-	response = strstr(response, "\"results\":");
-	if (response == NULL)
-	{
-		return false;
-	}
-	
-	const char *location_response = strstr(response, "\"location\":");
-	if (location_response == NULL)
-	{
-		return false;
-	}
-	
-	const char *loaction_name_response = strstr(location_response, "\"name\":");
-	if (loaction_name_response)
-	{
-		sscanf(loaction_name_response, "\"name\": \"%31[^\"]\"", info->city);
-	}
-	
-	const char *loaction_path_response = strstr(location_response, "\"path\":");
-	if (loaction_path_response)
-	{
-		sscanf(loaction_path_response, "\"path\": \"%128[^\"]\"", info->loaction);
-	}
-	
-	const char *daily_response = strstr(response, "\"daily\":");
-	if (daily_response == NULL)
-	{
-		return false;
-	}
-	
-	const char *daily_text_response = strstr(daily_response, "\"text_day\":");
-	if (daily_text_response)
-	{
-		sscanf(daily_text_response, "\"text_day\": \"%15[^\"]\"", info->weather);
-	}
-	
-	const char *daily_code_response = strstr(daily_response, "\"code_day\":");
-	if (daily_code_response)
-	{
-		sscanf(daily_code_response, "\"code_day\": \"%d\"", &info->weather_code);
-	}
-	
-	char high_str[16] = { 0 };
-	const char *daily_high_response = strstr(daily_response, "\"high\":");
-	if (daily_high_response)
-	{
-		sscanf(daily_high_response, "\"high\": \"%15[^\"]\"", high_str);
-		if (strlen(high_str) > 0)
-		{
-			info->temperature = atoi(high_str);
-		}
-	}
-	
-	const char *daily_humidity_response = strstr(daily_response, "\"humidity\":");
-	if (daily_humidity_response)
-	{
-		sscanf(daily_humidity_response, "\"humidity\": \"%d\"", &info->humidity);
-	}
-	
-	char wind_speed_str[16] = { 0 };
-	const char *daily_wind_speed_response = strstr(daily_response, "\"wind_speed\":");
-	if (daily_wind_speed_response)
-	{
-		sscanf(daily_wind_speed_response, "\"wind_speed\": \"%15[^\"]\"", wind_speed_str);
-		if (strlen(wind_speed_str) > 0)
-		{
-			info->wind_speed = atoi(wind_speed_str);
-		}
-	}
-	
-	const char *daily_wind_direction_response = strstr(daily_response, "\"wind_direction\":");
-	if (daily_wind_direction_response)
-	{
-		sscanf(daily_wind_direction_response, "\"wind_direction\": \"%7[^\"]\"", info->wind_direction);
-	}
-	
-	return true;
+    if (response == NULL || strlen(response) == 0)
+    {
+        return false;
+    }
+
+    response = strstr(response, "\"results\":");
+    if (response == NULL)
+    {
+        return false;
+    }
+
+    const char *location_response = strstr(response, "\"location\":");
+    if (location_response == NULL)
+    {
+        return false;
+    }
+
+    const char *location_name_response = strstr(location_response, "\"name\":");
+    if (location_name_response)
+    {
+        sscanf(location_name_response, "\"name\": \"%31[^\"]\"", info->city);
+    }
+
+    const char *location_path_response = strstr(location_response, "\"path\":");
+    if (location_path_response)
+    {
+        sscanf(location_path_response, "\"path\": \"%128[^\"]\"", info->location);
+    }
+
+    const char *daily_response = strstr(response, "\"daily\":");
+    if (daily_response == NULL)
+    {
+        return false;
+    }
+
+    const char *daily_text_response = strstr(daily_response, "\"text_day\":");
+    if (daily_text_response)
+    {
+        sscanf(daily_text_response, "\"text_day\": \"%15[^\"]\"", info->weather);
+    }
+
+    const char *daily_code_response = strstr(daily_response, "\"code_day\":");
+    if (daily_code_response)
+    {
+        sscanf(daily_code_response, "\"code_day\": \"%d\"", &info->weather_code);
+    }
+
+    char high_str[16] = { 0 };
+    const char *daily_high_response = strstr(daily_response, "\"high\":");
+    if (daily_high_response)
+    {
+        sscanf(daily_high_response, "\"high\": \"%15[^\"]\"", high_str);
+        if (strlen(high_str) > 0)
+        {
+            info->temperature = atoi(high_str);
+        }
+    }
+
+    const char *daily_humidity_response = strstr(daily_response, "\"humidity\":");
+    if (daily_humidity_response)
+    {
+        sscanf(daily_humidity_response, "\"humidity\": \"%d\"", &info->humidity);
+    }
+
+    char wind_speed_str[16] = { 0 };
+    const char *daily_wind_speed_response = strstr(daily_response, "\"wind_speed\":");
+    if (daily_wind_speed_response)
+    {
+        sscanf(daily_wind_speed_response, "\"wind_speed\": \"%15[^\"]\"", wind_speed_str);
+        if (strlen(wind_speed_str) > 0)
+        {
+            info->wind_speed = atoi(wind_speed_str);
+        }
+    }
+
+    const char *daily_wind_direction_response = strstr(daily_response, "\"wind_direction\":");
+    if (daily_wind_direction_response)
+    {
+        sscanf(daily_wind_direction_response, "\"wind_direction\": \"%7[^\"]\"", info->wind_direction);
+    }
+
+    return true;
 }

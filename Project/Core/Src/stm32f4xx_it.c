@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    stm32f4xx_it.c
-  * @brief   Interrupt Service Routines.
+  * @brief   中断服务函数
   ******************************************************************************
   * @attention
   *
@@ -65,10 +65,10 @@ extern TIM_HandleTypeDef htim1;
 /* USER CODE END EV */
 
 /******************************************************************************/
-/*           Cortex-M4 Processor Interruption and Exception Handlers          */
+/*           Cortex-M4 处理器中断与异常处理函数                                  */
 /******************************************************************************/
 /**
-  * @brief This function handles Non maskable interrupt.
+  * @brief 不可屏蔽中断处理函数
   */
 void NMI_Handler(void)
 {
@@ -83,7 +83,7 @@ void NMI_Handler(void)
 }
 
 /**
-  * @brief This function handles Hard fault interrupt.
+  * @brief 硬件错误中断处理函数
   */
 void HardFault_Handler(void)
 {
@@ -98,7 +98,7 @@ void HardFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Memory management fault.
+  * @brief 内存管理错误处理函数
   */
 void MemManage_Handler(void)
 {
@@ -113,7 +113,7 @@ void MemManage_Handler(void)
 }
 
 /**
-  * @brief This function handles Pre-fetch fault, memory access fault.
+  * @brief 总线错误处理函数（预取指失败/内存访问失败）
   */
 void BusFault_Handler(void)
 {
@@ -128,7 +128,7 @@ void BusFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Undefined instruction or illegal state.
+  * @brief 用法错误处理函数（未定义指令或非法状态）
   */
 void UsageFault_Handler(void)
 {
@@ -143,7 +143,7 @@ void UsageFault_Handler(void)
 }
 
 /**
-  * @brief This function handles Debug monitor.
+  * @brief 调试监视器处理函数
   */
 void DebugMon_Handler(void)
 {
@@ -156,14 +156,13 @@ void DebugMon_Handler(void)
 }
 
 /******************************************************************************/
-/* STM32F4xx Peripheral Interrupt Handlers                                    */
-/* Add here the Interrupt Handlers for the used peripherals.                  */
-/* For the available peripheral interrupt handler names,                      */
-/* please refer to the startup file (startup_stm32f4xx.s).                    */
+/* STM32F4xx 外设中断处理函数                                                  */
+/* 在此添加使用的外设中断处理函数                                                */
+/* 可用的外设中断处理函数名称请参考启动文件 startup_stm32f4xx.s                  */
 /******************************************************************************/
 
 /**
-  * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
+  * @brief TIM1更新中断和TIM10全局中断处理函数
   */
 void TIM1_UP_TIM10_IRQHandler(void)
 {

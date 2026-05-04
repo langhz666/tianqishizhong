@@ -1,329 +1,300 @@
-# 天气时钟显示系统
+# 智能天气时钟 (Weather Clock)
 
-基于STM32F407和LVGL的智能天气时钟显示系统，支持WiFi连接、温湿度监测、网络时间同步和实时天气信息显示。
+基于 STM32F407 + LVGL 的智能天气时钟显示系统，支持 WiFi 连接、室内温湿度监测、网络时间同步和实时天气信息显示。
 
-## 项目简介
+## 功能演示
 
-本项目是一个功能完整的嵌入式系统，通过LCD屏幕实时显示时间、日期、室内温湿度和室外天气信息。系统使用FreeRTOS进行多任务管理，LVGL作为图形用户界面库，ESP32c3模块实现WiFi连接和网络通信。
-
-### 📺 功能演示 (Demo)
-
-> **[🎬 点击观看：演示视频 (本地 MP4)](Project/asset/demo.mp4)**
+> **[点击观看演示视频](Project/asset/demo.mp4)**
 
 ## 硬件平台
 
 ### 主控芯片
 
-- **MCU**: STM32F407ZGT6
-- **主频**: 168MHz
-- **Flash**: 1MB
-- **RAM**: 192KB (128KB + 64KB CCM)
+| 参数 | 规格 |
+|------|------|
+| MCU | STM32F407ZGT6 |
+| 主频 | 168 MHz |
+| Flash | 1 MB |
+| RAM | 192 KB (128KB + 64KB CCM) |
+| FPU | 单精度浮点单元 |
 
 ### 外设模块
 
-- **LCD屏幕**: ST7789控制器，240x320分辨率，RGB565颜色格式
-- **WiFi模块**: ESP32c3 (ESP-AT固件)
-- **温湿度传感器**: DHT11
-- **实时时钟**: STM32内部RTC
-- **按键**: 3个按键（KEY0、KEY1、KEY2）
-- **LED**: 板载LED
-- **蜂鸣器**: 板载蜂鸣器
+| 模块 | 型号/规格 | 用途 |
+|------|----------|------|
+| LCD 屏幕 | ST7789, 240x320, RGB565 | 图形显示 |
+| WiFi 模块 | ESP32-C3 (AT 固件) | 网络通信 |
+| 温湿度传感器 | DHT11 | 室内环境监测 |
+| 实时时钟 | STM32 内部 RTC (LSE) | 时间保持 |
+| LED | PF9/PF10 | 状态指示 |
+| 蜂鸣器 | PF8 | 声音提示 |
+| 按键 | KEY0/KEY1/KEY2/KEY_UP | 用户输入 |
 
 ## 软件架构
 
-### 操作系统
+### 系统架构图
 
-- **FreeRTOS**: 实时操作系统，实现多任务调度
-- **CMSIS-RTOS2**: 标准RTOS接口
+```
+┌─────────────────────────────────────────────────────┐
+│                    FreeRTOS 调度器                    │
+├──────────┬──────────┬──────────┬──────────┬──────────┤
+│ lvglTask │ wifiTask │ timeTask │sensorTask│weatherTask│
+│ (5ms)    │ (监控)   │ (1s)     │ (3s)     │ (60s)    │
+├──────────┴──────────┴──────────┴──────────┴──────────┤
+│                    BSP 驱动层                         │
+│  bsp_espat │ bsp_dht11 │ bsp_rtc │ lcd │ bsp_key    │
+├─────────────────────────────────────────────────────┤
+│                STM32 HAL 库 + LVGL                   │
+├─────────────────────────────────────────────────────┤
+│              STM32F407 硬件平台                       │
+└─────────────────────────────────────────────────────┘
+```
 
-### 图形库
-- **LVGL 8.x**: 轻量级嵌入式图形库
-- **配置**: RGB565颜色深度，48KB内存池
+### 技术栈
 
-### 网络协议
-- **HTTP**: 用于获取天气API数据
-- **SNTP**: 用于网络时间同步
+| 组件 | 版本/说明 |
+|------|----------|
+| RTOS | FreeRTOS 10.3.1 (CMSIS-RTOS2 V2) |
+| 图形库 | LVGL 8.3.11 (RGB565, 32KB 内存池) |
+| HAL 库 | STM32F4xx HAL Driver |
+| 编译器 | ARM GCC (arm-none-eabi-gcc) |
+| 构建系统 | Makefile + EIDE |
+
+### FreeRTOS 任务
+
+| 任务名称 | 优先级 | 栈大小 | 功能描述 |
+|---------|--------|--------|---------|
+| lvglTask | Normal | 4KB | LVGL 图形渲染，每 5ms 调用一次 |
+| wifiTask | Normal | 4KB | WiFi 连接管理，断线自动重连 |
+| timeTask | Normal | 1KB | SNTP 时间同步，每秒更新显示 |
+| sensorTask | Normal | 1KB | DHT11 读取，每 3 秒更新温湿度 |
+| weatherTask | BelowNormal | 2KB | 天气 API 请求，每 60 秒更新 |
+| defaultTask | Normal | 512B | 空闲任务 |
+
+### 同步机制
+
+| 同步对象 | 类型 | 用途 |
+|---------|------|------|
+| lcd_mutex | 互斥锁 | 保护 LVGL 线程安全 |
+| esp_mutex | 互斥锁 | 保护 ESP 模块访问 |
+| EVENT_WIFI_CONNECTED | 事件标志 | WiFi 连接完成通知 |
+| EVENT_TIME_SYNCED | 事件标志 | 时间同步完成通知 |
+| EVENT_MAIN_PAGE_READY | 事件标志 | 主页面就绪通知 |
 
 ## 项目结构
 
 ```
-lvgl/
-├── Core/                          # STM32核心代码
+Project/
+├── Core/                          # STM32 核心代码
 │   ├── Inc/                       # 头文件
-│   │   ├── FreeRTOSConfig.h       # FreeRTOS配置
-│   │   ├── main.h                # 主程序头文件
-│   │   ├── stm32f4xx_hal_conf.h # HAL库配置
+│   │   ├── main.h                 # 主程序头文件（GPIO引脚定义）
+│   │   ├── FreeRTOSConfig.h       # FreeRTOS 配置
 │   │   └── ...
 │   └── Src/                       # 源文件
-│       ├── freertos.c             # FreeRTOS任务和初始化
-│       ├── main.c                # 主程序入口
-│       ├── stm32f4xx_it.c       # 中断处理
-│       └── ...
+│       ├── main.c                 # 主程序入口，系统初始化
+│       ├── freertos.c             # FreeRTOS 任务实现（核心逻辑）
+│       ├── gpio.c                 # GPIO 初始化（CubeMX 生成）
+│       ├── usart.c                # UART 初始化（CubeMX 生成）
+│       ├── rtc.c                  # RTC 初始化（CubeMX 生成）
+│       └── fsmc.c                 # FSMC 初始化（CubeMX 生成）
 ├── Drivers/                       # 驱动代码
-│   ├── BSP/                       # 板级支持包
-│   │   ├── bsp_lcd/              # LCD驱动
-│   │   │   ├── lcd.c            # LCD底层驱动
-│   │   │   ├── lcd.h
-│   │   │   └── lcd_ex.c         # LCD控制器初始化
-│   │   ├── bsp_delay.c           # 延时函数
-│   │   ├── bsp_dht11.c          # DHT11温湿度传感器
-│   │   ├── bsp_espat.c          # ESP8266 AT指令
-│   │   ├── bsp_key.c            # 按键驱动
-│   │   ├── bsp_rtc.c            # RTC驱动
-│   │   ├── bsp_usart.c          # 串口驱动
-│   │   ├── led.c                # LED驱动
-│   │   └── bsp_beep.c           # 蜂鸣器驱动
-│   ├── CMSIS/                    # CMSIS库
-│   └── STM32F4xx_HAL_Driver/     # STM32 HAL库
-├── APP/                          # 应用层代码
-│   ├── lvgl_ui/                   # LVGL用户界面
-│   │   ├── lv_page_manager.c     # 页面管理器
-│   │   ├── lv_page_manager.h
-│   │   ├── lv_test_page.c       # LVGL测试页面
-│   │   ├── lv_test_page.h
-│   │   ├── lv_welcome_page.c    # 欢迎页面
-│   │   ├── lv_welcome_page.h
-│   │   ├── lv_wifi_page.c        # WiFi连接页面
-│   │   ├── lv_wifi_page.h
-│   │   ├── lv_main_page.c       # 主显示页面
-│   │   ├── lv_main_page.h
-│   │   ├── lv_error_page.c      # 错误页面
-│   │   └── lv_error_page.h
-│   ├── lvgl_port/                 # LVGL移植代码
-│   │   ├── lv_port_disp.c       # LVGL显示驱动
-│   │   ├── lv_port_disp.h
-│   │   ├── lv_port_indev.c      # LVGL输入设备驱动
-│   │   └── lv_port_indev.h
-│   ├── page/                      # 旧版LCD页面代码
-│   │   ├── main_page.c
-│   │   ├── welcome_page.c
-│   │   ├── wifi_page.c
-│   │   └── error_page.c
-│   ├── weather/                   # 天气相关代码
-│   │   ├── weather.c            # 天气API解析
-│   │   └── weather.h
-│   ├── imag/                      # 图片资源
-│   │   ├── icon_wifi.c          # WiFi图标
-│   │   ├── icon_wenduji.c       # 温度计图标
-│   │   ├── icon_qing.c          # 晴天图标
-│   │   ├── icon_yintian.c       # 阴天图标
-│   │   ├── icon_duoyun.c        # 多云图标
-│   │   ├── icon_zhongyu.c       # 中雨图标
-│   │   ├── icon_zhongxue.c      # 中雪图标
-│   │   ├── icon_leizhenyu.c     # 雷阵雨图标
-│   │   ├── icon_yueliang.c      # 月亮图标
-│   │   ├── icon_na.c            # 未知图标
-│   │   ├── img_chengpingan.c    # 岁岁平安图片
-│   │   ├── img_error.c          # 错误图片
-│   │   └── imag.h
-│   ├── font/                      # 字体资源
-│   │   ├── lcdfont.c           # LCD字体
-│   │   ├── font16_maple.c      # 16号字体
-│   │   ├── font20_maple_bold.c # 20号粗体
-│   │   └── ...
-│   ├── wifi.c                     # WiFi管理
-│   ├── app.h                      # 应用头文件
-│   └── mloop.c                    # 主循环
-├── LVGL/                         # LVGL图形库
-│   ├── src/                       # LVGL源代码
-│   ├── examples/                  # LVGL示例
-│   ├── demos/                     # LVGL演示
-│   └── lv_conf.h                 # LVGL配置文件
-├── Middlewares/                   # 中间件
-│   └── Third_Party/
-│       └── FreeRTOS/             # FreeRTOS源代码
-├── .eide/                       # EIDE工程配置
-├── .vscode/                     # VSCode配置
-├── .trae/                       # Trae配置
-└── README.md                     # 项目说明文档
+│   └── BSP/                       # 板级支持包
+│       ├── bsp_espat.c/h          # ESP AT 指令驱动
+│       ├── bsp_dht11.c/h          # DHT11 温湿度传感器驱动
+│       ├── bsp_rtc.c/h            # RTC 读写驱动（带验证）
+│       ├── bsp_key.c/h            # 按键驱动
+│       ├── bsp_delay.c/h          # DWT 微秒延时
+│       ├── bsp_beep.c/h           # 蜂鸣器驱动
+│       ├── bsp_usart.c/h          # printf 重定向
+│       ├── led.c/h                # LED 驱动
+│       ├── bsp_lcd/               # LCD 驱动（FSMC 16bit）
+│       └── TOUCH/                 # 触摸屏驱动（预留）
+├── APP/                           # 应用层代码
+│   ├── app.h                      # 全局配置（WiFi SSID/密码）
+│   ├── wifi.c                     # WiFi 初始化和连接
+│   ├── mloop.c                    # 旧版主循环（已弃用）
+│   ├── page/
+│   │   ├── page.h                 # 页面函数声明
+│   │   └── lvgl_pages.c           # LVGL UI 实现（全部页面）
+│   ├── weather/
+│   │   ├── weather.c/h            # 心知天气 API 解析
+│   ├── font/
+│   │   └── lcdfont.c/h            # 位图字体数据
+│   └── imag/
+│       ├── imag.h                 # 图片资源声明
+│       ├── img_chengpingan.c      # 欢迎页 Logo
+│       └── xiaozhang.c            # 主页面背景
+├── LVGL/                          # LVGL 图形库（vendor）
+├── Middlewares/                    # FreeRTOS 中间件（vendor）
+├── Makefile                       # GCC ARM 构建脚本
+└── STM32F407XX_FLASH.ld           # 链接脚本
 ```
 
-## 主要功能
+## UI 界面
 
-### 1. 多页面UI系统
+系统包含 4 个页面，支持滑动切换：
 
-- **欢迎页面**: 显示"岁岁平安"标题和加载动画
-- **WiFi页面**: 显示WiFi连接状态
-- **主页面**: 显示时间、日期、室内温湿度和室外天气
-- **错误页面**: 显示系统错误信息
+### 欢迎页 (Splash Screen)
+- Logo 图片（弹性动画入场）
+- "Weather Clock" 标题
+- 进度条 + 百分比文字
+- 状态提示文本
 
-### 2. 实时时间显示
-- **RTC时间**: 使用STM32内部RTC
-- **网络同步**: 通过SNTP协议同步网络时间
-- **自动校准**: 定期同步网络时间
+### WiFi 配网页面
+- WiFi 图标动画
+- SSID 名称显示
+- 连接状态（Spinner 加载动画）
 
-### 3. 温湿度监测
+### 主界面（3 个 Tab 页）
 
-- **室内温湿度**: 通过DHT11传感器读取
-- **实时更新**: 每3秒更新一次
-- **数据验证**: 自动检测传感器故障
+**Tab 1 - 时间与环境**
+- 大号时钟显示（Montserrat 38）
+- 年月日 + 星期
+- 室内卡片（温度 + 湿度，DHT11）
+- 室外卡片（温度 + 天气图标，API 数据）
 
-### 4. 天气信息显示
-- **天气API**: 使用心知天气API
-- **实时天气**: 显示当前温度和天气状况
-- **天气图标**: 根据天气代码显示对应图标
-- **自动更新**: 每60秒更新一次
+**Tab 2 - 天气详情**
+- 城市定位
+- 超大温度显示（Montserrat 48）
+- 天气描述
+- 湿度和风力详情
 
-### 5. WiFi连接
+**Tab 3 - 系统设置**
+- 定位城市
+- MCU 型号
+- WiFi 模块型号
+- 固件版本
 
-- **自动连接**: 启动时自动连接到配置的WiFi
-- **断线重连**: WiFi断开后自动重连
-- **状态监控**: 实时监控WiFi连接状态
+### 错误页
+- 警告图标
+- 错误信息文本
 
-## FreeRTOS任务
+### 天气图标
 
-系统使用FreeRTOS实现多任务调度，主要任务包括：
+系统使用 `lv_canvas` 自定义绘制天气图标：
 
-| 任务名称 | 优先级 | 堆栈大小 | 功能描述 |
-|---------|---------|-----------|---------|
-| lvglTask | High | 8KB | LVGL图形库主循环，处理UI渲染和事件 |
-| wifiTask | Normal | 2KB | WiFi连接管理，监控WiFi状态 |
-| timeTask | Normal | 2KB | 时间管理，SNTP时间同步 |
-| sensorTask | Normal | 2KB | 传感器数据读取，温湿度更新 |
-| weatherTask | Normal | 2KB | 天气信息获取和更新 |
-| defaultTask | Normal | 2KB | 默认任务，等待事件 |
-
-## 事件标志
-
-系统使用FreeRTOS事件标志进行任务间同步：
-
-| 事件标志 | 描述 | 触发任务 |
-|---------|------|---------|
-| EVENT_LVGL_READY | LVGL初始化完成 | wifiTask |
-| EVENT_WIFI_CONNECTED | WiFi连接成功 | timeTask, weatherTask |
-| EVENT_TIME_SYNCED | 时间同步完成 | sensorTask |
-| EVENT_MAIN_PAGE_READY | 主页面准备完成 | sensorTask |
-
-## LVGL配置
-
-### 颜色配置
-- **颜色深度**: 16位 (RGB565)
-- **字节交换**: 启用 (LV_COLOR_16_SWAP = 1)
-- **色键**: 纯绿色 (0x00FF00)
-
-### 内存配置
-
-- **内存池大小**: 48KB
-- **显示缓冲区**: 240x5像素
-- **层缓冲区**: 8KB
-
-### 组件配置
-
-- **启用的组件**: 
-  - Label (标签)
-  - Button (按钮)
-  - Image (图片)
-  - Bar (进度条)
-  - Slider (滑块)
-  - Switch (开关)
-  - Checkbox (复选框)
-- **禁用的组件**: 
-  - Arc (弧形)
-  - Canvas (画布)
-  - Button Matrix (按钮矩阵)
-  - Dropdown (下拉列表)
-  - Keyboard (键盘)
-  - List (列表)
-  - Roller (滚动器)
-  - Textarea (文本框)
-
-### 字体配置
-- **默认字体**: Montserrat系列
-- **启用的字体**: 
-  - Montserrat 14
-  - Montserrat 16
-  - Montserrat 20
+| 天气 | 代码 | 绘制方式 |
+|------|------|---------|
+| 晴天 | 0, 2, 38 | 圆形 + 8 条光线 |
+| 夜晚 | 1, 3 | 新月形 |
+| 多云 | 4, 9, 30 | 3 个圆 + 圆角矩形 |
+| 雨天 | 10-19 | 云朵 + 斜线 |
+| 雷雨 | 11, 12 | 云朵 + 闪电折线 |
+| 雪天 | 20-25 | 云朵 + 白色小点 |
+| 未知 | 其他 | "??" 文字 |
 
 ## 编译和烧录
 
 ### 开发环境
-- **IDE**: EIDE (Embedded IDE)
-- **编译器**: ARM GCC
-- **调试器**: ST-Link V2
+
+- **IDE**: EIDE (Embedded IDE) 或 VSCode
+- **编译器**: ARM GCC (arm-none-eabi-gcc)
+- **调试器**: ST-Link V2 (SWD, 4MHz)
 - **目标板**: STM32F407ZGT6
 
-### 编译步骤
+### 使用 Makefile 编译
 
-1. 打开EIDE工程
-2. 选择Debug配置
-3. 点击"Build"按钮
-4. 等待编译完成
+```bash
+cd Project
+make          # 编译
+make clean    # 清理
+```
 
-### 烧录步骤
+编译产物位于 `Project/build/` 目录：
+- `Project.elf` - 可执行文件
+- `Project.hex` - Intel HEX 格式
+- `Project.bin` - 二进制格式
 
-1. 连接ST-Link调试器到开发板
-2. 在EIDE中选择"Upload" → "STLink"
-3. 点击"Upload"按钮
-4. 等待烧录完成
+使用 EIDE 编译时，产物位于 `Project/build/Debug/` 目录：
+- `lvgl.elf` - 可执行文件
+- `lvgl.hex` - Intel HEX 格式
 
-### 串口配置
+### 使用 EIDE 编译
+
+1. 打开 `Project/Project.code-workspace`
+2. 选择 Debug 配置
+3. 点击 "Build" 按钮
+
+### 烧录
+
+1. 连接 ST-Link 调试器
+2. 在 EIDE 中选择 "Upload" -> "STLink"
+3. 点击 "Upload" 按钮
+
+### 串口调试
+
 - **波特率**: 115200
 - **数据位**: 8
 - **停止位**: 1
-- **校验位**: None
+- **校验位**: 无
+- **串口**: USART1 (PA9-TX, PA10-RX)
 
 ## 配置说明
 
-### WiFi配置
-在`Core/Src/freertos.c`中修改WiFi配置：
+### WiFi 配置
+
+修改 `Project/APP/app.h` 中的宏定义：
+
 ```c
-#define WIFI_SSID "your_wifi_ssid"
+#define WIFI_SSID   "your_wifi_ssid"
 #define WIFI_PASSWD "your_wifi_password"
 ```
 
-### 天气API配置
+### 天气 API 配置
 
-在`Core/Src/freertos.c`中修改天气API URL：
+修改 `Project/Core/Src/freertos.c` 中的 URL：
+
 ```c
-static const char *weather_url = "http://api.seniverse.com/v3/weather/now.json?key=YOUR_API_KEY&location=YOUR_CITY&language=en&unit=c";
+static const char *weather_url =
+    "http://api.seniverse.com/v3/weather/daily.json?key=YOUR_KEY&location=YOUR_CITY&language=en&unit=c&days=1";
 ```
 
-### LCD分辨率配置
+API 来源：[心知天气 (Seniverse)](https://www.seniverse.com/)
 
-在`APP/lvgl_port/lv_port_disp.c`中修改：
-```c
-#define MY_DISP_HOR_RES    240
-#define MY_DISP_VER_RES    320
+### 系统时钟
+
+系统时钟配置在 `Project/Core/Src/main.c` 的 `SystemClock_Config()` 中：
+
+```
+HSE (8MHz) -> PLL (M=4, N=168, P=2) -> SYSCLK = 168MHz
+AHB = 168MHz, APB1 = 42MHz, APB2 = 84MHz
+LSE (32.768kHz) -> RTC
 ```
 
-## 调试
+## 代码规范
 
-### 串口调试
-系统通过串口输出详细的调试信息，包括：
-- 系统初始化状态
-- 任务创建和运行状态
-- WiFi连接状态
-- 传感器数据
-- LVGL渲染信息
-- 页面切换信息
+### 注释风格
 
-### LCD测试
-系统启动时会自动执行LCD硬件测试，依次显示：
-- 黑色屏幕
-- 白色屏幕
-- 红色屏幕
-- 绿色屏幕
-- 蓝色屏幕
+- 使用 Doxygen 格式注释
+- 中文注释，UTF-8 编码
+- 文件头：`@file`、`@brief`、`@author`、`@version`
+- 函数头：`@brief`、`@param`、`@return`、`@note`
+- 行内注释：`/* */` 格式
 
-### LVGL测试
-系统默认启动LVGL测试页面，包含：
-- 按钮（带点击计数）
-- 滑块（带数值显示）
-- 开关
-- 进度条
-- 复选框
+### 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| BSP 文件 | `bsp_` 前缀 | `bsp_espat.c` |
+| 结构体 | `_t` 后缀 | `weather_info_t` |
+| 宏定义 | 大写下划线 | `EVENT_WIFI_CONNECTED` |
+| 函数 | 小写下划线 | `main_page_redraw_time()` |
+
+### 线程安全
+
+- 所有 LVGL 操作必须通过 `lcd_lock()`/`lcd_unlock()` 保护
+- 所有 ESP AT 指令必须通过 `esp_lock()`/`esp_unlock()` 保护
+- UI 更新函数内置变化检测，数据未变时跳过重绘
 
 ## 已知问题
 
-1. **中文字体支持**: 当前使用的Montserrat字体不支持中文字符，中文会显示为方框
-2. **触摸功能**: 当前使用按键模拟触摸，尚未实现真正的触摸功能
-3. **天气API**: 使用免费API，可能有调用次数限制
+1. **中文字体**：当前使用 Montserrat 字体，不支持中文字符
+2. **触摸功能**：触摸屏驱动已存在但未启用，使用按键模拟
+3. **天气 API**：免费版有调用次数限制
+4. **WiFi 凭据**：硬编码在源文件中，未实现动态配网
 
-## 未来改进
+## 许可证
 
-1. **中文字体**: 添加中文字体支持
-2. **触摸功能**: 实现真正的触摸屏支持
-3. **天气预报**: 添加多天天气预报功能
-4. **闹钟功能**: 添加闹钟和提醒功能
-5. **数据存储**: 添加历史数据存储功能
-6. **低功耗**: 优化功耗，支持电池供电
+本项目基于 STM32CubeMX 生成的代码框架开发。
+LVGL 库遵循 MIT 许可证。
+FreeRTOS 库遵循 MIT 许可证。

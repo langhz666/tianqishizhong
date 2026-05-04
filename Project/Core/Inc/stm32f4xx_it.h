@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file    stm32f4xx_it.h
-  * @brief   This file contains the headers of the interrupt handlers.
+  * @brief   中断处理函数头文件
   ******************************************************************************
   * @attention
   *
@@ -17,7 +17,7 @@
   */
 /* USER CODE END Header */
 
-/* Define to prevent recursive inclusion -------------------------------------*/
+/* 防止重复包含 ---------------------------------------------------------------*/
 #ifndef __STM32F4xx_IT_H
 #define __STM32F4xx_IT_H
 

@@ -1,9 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * File Name          : FSMC.h
-  * Description        : This file provides code for the configuration
-  *                      of the FSMC peripheral.
+  * @file    fsmc.h
+  * @brief   FSMC静态存储器控制器头文件，用于LCD数据总线配置
   ******************************************************************************
   * @attention
   *
@@ -17,7 +16,7 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
-/* Define to prevent recursive inclusion -------------------------------------*/
+/* 防止重复包含 ---------------------------------------------------------------*/
 #ifndef __FSMC_H
 #define __FSMC_H
 #ifdef __cplusplus

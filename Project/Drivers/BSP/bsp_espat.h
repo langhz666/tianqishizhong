@@ -1,31 +1,31 @@
 /**
  * @file bsp_espat.h
- * @brief ESP8266/ESP32 ATָ������ģ��ͷ�ļ�
- * 
- * ��ͷ�ļ�������ESP ATģ�����������ݽṹ�ͺ����ӿڡ�
- * ֧��ESP8266��ESP32ϵ��ģ�飬ͨ��UART����ATָ��ͨ�š�
- * 
- * ��Ҫ���ܣ�
- * - ATָ�����ͨ��
- * - WiFi���ӹ���
- * - SNTP����ʱ��ͬ��
- * - HTTP�ͻ�������
- * 
- * ʹ��ʾ����
+ * @brief ESP8266/ESP32 AT指令驱动模块头文件
+ *
+ * 本头文件定义了ESP AT模块的数据结构和函数接口。
+ * 支持ESP8266和ESP32系列模块，通过UART使用AT指令通信。
+ *
+ * 主要功能：
+ * - AT指令收发通信
+ * - WiFi连接管理
+ * - SNTP网络时间同步
+ * - HTTP客户端请求
+ *
+ * 使用示例：
  * @code
- * // ��ʼ��ESPģ��
+ * // 初始化ESP模块
  * esp_at_init();
- * 
- * // ��ʼ��WiFi������
+ *
+ * // 初始化WiFi协议栈
  * esp_at_wifi_init();
  * esp_at_connect_wifi("SSID", "password", NULL);
- * 
- * // ��ȡ����ʱ��
+ *
+ * // 获取网络时间
  * esp_at_sntp_init();
  * esp_date_time_t time;
  * esp_at_sntp_get_time(&time);
  * @endcode
- * 
+ *
  * @author Smart Weather Clock Team
  * @version 1.0.0
  */
@@ -37,189 +37,189 @@
 #include <stdint.h>
 
 /*============================================================================*/
-/*                             ���ݽṹ����                                   */
+/*                             数据结构定义                                   */
 /*============================================================================*/
 
 /**
- * @brief WiFi������Ϣ�ṹ��
- * 
- * �洢��ǰWiFi���ӵ���ϸ��Ϣ�������������ơ��ź�ǿ�ȵ�
+ * @brief WiFi连接信息结构体
+ *
+ * 存储当前WiFi连接的详细信息，包括网络名称、信号强度等
  */
 typedef struct
 {
-	char ssid[64];      /**< WiFi�������ƣ�SSID�������63�ַ� */
-	char bssid[18];     /**< AP��MAC��ַ����ʽ��"aa:bb:cc:dd:ee:ff" */
-	int channel;        /**< WiFi�ŵ��ţ���Χ1-13 */
-	int rssi;           /**< �ź�ǿ�ȣ�dBm������ֵ��Խ�ӽ�0�ź�Խǿ */
-	bool connected;     /**< ����״̬��־��true��ʾ������ */
+    char ssid[64];      /**< WiFi网络名称（SSID），最长63字符 */
+    char bssid[18];     /**< AP的MAC地址，格式："aa:bb:cc:dd:ee:ff" */
+    int channel;        /**< WiFi信道号，范围1-13 */
+    int rssi;           /**< 信号强度（dBm），值越接近0信号越强 */
+    bool connected;     /**< 连接状态标志，true表示已连接 */
 } esp_wifi_info_t;
 
 /**
- * @brief ����ʱ��ṹ��
- * 
- * �洢��SNTP��������ȡ������ʱ����Ϣ
- * �����ֶξ�Ϊ�޷�������������ֱ��ʹ��
+ * @brief 日期时间结构体
+ *
+ * 存储从SNTP服务器获取的网络日期时间信息
+ * 所有字段均为无符号整数，可直接使用
  */
 typedef struct
 {
-    uint16_t year;      /**< ������ݣ���2026 */
-    uint8_t month;      /**< �·ݣ���Χ1-12 */
-    uint8_t day;        /**< ���ڣ���Χ1-31 */
-    uint8_t hour;       /**< Сʱ����Χ0-23��24Сʱ�ƣ� */
-    uint8_t minute;     /**< ���ӣ���Χ0-59 */
-    uint8_t second;     /**< �룬��Χ0-59 */
-    uint8_t weekday;    /**< ���ڣ���Χ1-7��1=��һ��7=���գ� */
+    uint16_t year;      /**< 年份，如2026 */
+    uint8_t month;      /**< 月份，范围1-12 */
+    uint8_t day;        /**< 日期，范围1-31 */
+    uint8_t hour;       /**< 小时，范围0-23（24小时制） */
+    uint8_t minute;     /**< 分钟，范围0-59 */
+    uint8_t second;     /**< 秒，范围0-59 */
+    uint8_t weekday;    /**< 星期，范围1-7（1=周一，7=周日） */
 } esp_date_time_t;
 
 /*============================================================================*/
-/*                             ATָ���������                                 */
+/*                             AT指令基础接口                                 */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��ESP ATģ��
- * 
- * ִ��ģ���ʼ�����̣����������ʼ�⡢ģ�鸴λ���رջ��Ե�
- * 
- * @return true ��ʼ���ɹ�
- * @return false ��ʼ��ʧ�ܣ�ģ������Ӧ��ͨ�Ŵ���
- * 
- * @note ��ʼ������Լ��15�룬��ȷ��ģ������ȷ�ϵ�
+ * @brief 初始化ESP AT模块
+ *
+ * 执行模块初始化流程，包括波特率检测、模块复位、关闭回显等
+ *
+ * @return true 初始化成功
+ * @return false 初始化失败（模块无应答或通信错误）
+ *
+ * @note 初始化过程约需15秒，请确保模块已正确上电
  */
 bool esp_at_init(void);
 
 /**
- * @brief �ȴ�ESPģ�����
- * 
- * �����ȴ�ESPģ�鷢��"ready"��Ӧ������ģ�鸴λ��ĵȴ�
- * 
- * @param timeout ��ʱʱ�䣨���룩
- * @return true ģ���Ѿ���
- * @return false �ȴ���ʱ
+ * @brief 等待ESP模块就绪
+ *
+ * 阻塞等待ESP模块发送"ready"响应（模块复位后的等待）
+ *
+ * @param timeout 超时时间（毫秒）
+ * @return true 模块已就绪
+ * @return false 等待超时
  */
 bool esp_at_wait_ready(uint32_t timeout);
 
 /**
- * @brief ����ATָ��ȴ���Ӧ
- * 
- * ����ATָ������ȴ���Ӧ���������Զ�����\r\n��β
- * 
- * @param command ATָ���ַ���������\r\n��
- * @param timeout ��ʱʱ�䣨���룩
- * @return true ָ��ִ�гɹ����յ�OK��Ӧ��
- * @return false ָ��ִ��ʧ�ܻ�ʱ
- * 
- * @warning �˺��������̰߳�ȫ�ģ������񻷾���ʹ��esp_at_write_command_locked
+ * @brief 发送AT指令并等待响应（非线程安全）
+ *
+ * 发送AT指令并阻塞等待响应，会自动添加\r\n结尾
+ *
+ * @param command AT指令字符串（不含\r\n）
+ * @param timeout 超时时间（毫秒）
+ * @return true 指令执行成功（收到OK响应）
+ * @return false 指令执行失败或超时
+ *
+ * @warning 此函数非线程安全，多任务环境下请使用esp_at_write_command_locked
  */
 bool esp_at_write_command(const char *command, uint32_t timeout);
 
 /**
- * @brief ��ȡ���һ��ATָ�����Ӧ����
- * 
- * �����ڲ����ջ�������ָ�룬����ESPģ���������Ӧ
- * 
- * @return const char* ��Ӧ�ַ���ָ��
- * 
- * @note ���ص�ָ��ָ���ڲ���̬���������´ν��ջḲ������
- * @note �����Ҫ������Ӧ���ݣ������и���
+ * @brief 获取上一条AT指令的响应内容
+ *
+ * 返回内部接收缓冲区指针，包含ESP模块的完整响应
+ *
+ * @return const char* 响应字符串指针
+ *
+ * @note 返回的指针指向内部静态缓冲区，下次接收会覆盖内容
+ * @note 如需保存响应内容，请自行拷贝
  */
 const char *esp_at_get_response(void);
 
 /*============================================================================*/
-/*                             WiFi���ܺ���                                   */
+/*                             WiFi功能函数                                   */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��WiFiЭ��ջ
- * 
- * ����WiFi����ģʽΪStationģʽ���ͻ���ģʽ��
- * 
- * @return true ���óɹ�
- * @return false ����ʧ��
+ * @brief 初始化WiFi协议栈
+ *
+ * 设置WiFi工作模式为Station模式（客户端模式）
+ *
+ * @return true 设置成功
+ * @return false 设置失败
  */
 bool esp_at_wifi_init(void);
 
 /**
- * @brief ���ӵ�WiFi�ȵ�
- * 
- * ʹ��ָ����SSID����������WiFi����
- * 
- * @param ssid WiFi��������
- * @param pwd WiFi����
- * @param mac Ŀ��AP��MAC��ַ����ѡ����NULL���ɣ�
- * @return true ���ӳɹ�
- * @return false ����ʧ��
- * 
- * @note ���ӳ�ʱʱ��Ϊ20��
+ * @brief 连接到WiFi热点
+ *
+ * 使用指定的SSID和密码连接WiFi网络
+ *
+ * @param ssid WiFi网络名称
+ * @param pwd WiFi密码
+ * @param mac 目标AP的MAC地址（可选，传NULL即可）
+ * @return true 连接成功
+ * @return false 连接失败
+ *
+ * @note 连接超时时间为20秒
  */
 bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac);
 
 /**
- * @brief ��ȡ��ǰWiFi������Ϣ
- * 
- * ��ѯ��ǰ�����ӵ�WiFi������ϸ��Ϣ
- * 
- * @param info �����WiFi��Ϣ�ṹ��ָ��
- * @return true ��ȡ�ɹ�
- * @return false δ���ӻ��ȡʧ��
+ * @brief 获取当前WiFi连接信息
+ *
+ * 查询当前已连接WiFi的详细信息
+ *
+ * @param info 输出WiFi信息结构体指针
+ * @return true 获取成功
+ * @return false 未连接或获取失败
  */
 bool esp_at_get_wifi_info(esp_wifi_info_t *info);
 
 /**
- * @brief ���WiFi�Ƿ�������
- * 
- * ���ټ��WiFi����״̬
- * 
- * @return true �����ӵ�WiFi����
- * @return false δ����
+ * @brief 检查WiFi是否已连接
+ *
+ * 快速检查WiFi连接状态
+ *
+ * @return true 已连接到WiFi网络
+ * @return false 未连接
  */
 bool wifi_is_connected(void);
 
 /*============================================================================*/
-/*                             SNTPʱ��ͬ������                               */
+/*                             SNTP时间同步接口                               */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��SNTPʱ��ͬ������
- * 
- * ����SNTP��������ʱ����ʹ���й�NTP��������
- * ʱ������Ϊ������������ʱ�䣬UTC+8��
- * 
- * @return true ���óɹ�
- * @return false ����ʧ��
- * 
- * @note ��Ҫ������WiFi��������ʹ��SNTP����
+ * @brief 初始化SNTP时间同步服务
+ *
+ * 配置SNTP服务器地址。使用中国NTP服务器：
+ * 时区设置为中国标准时间（UTC+8）
+ *
+ * @return true 设置成功
+ * @return false 设置失败
+ *
+ * @note 需要先建立WiFi连接才能使用SNTP服务
  */
 bool esp_at_sntp_init(void);
 
 /**
- * @brief ��SNTP��������ȡ��ǰʱ��
- * 
- * �����õ�NTP��������ȡ׼ȷ������ʱ��
- * 
- * @param date ���������ʱ��ṹ��ָ��
- * @return true ��ȡ�ɹ�
- * @return false ��ȡʧ��
- * 
- * @note ��Ҫ�ȵ���esp_at_sntp_init()��ʼ��SNTP����
- * @note ��ҪWiFi������
+ * @brief 从SNTP服务器获取当前时间
+ *
+ * 通过配置的NTP服务器获取准确的网络时间
+ *
+ * @param date 输出日期时间结构体指针
+ * @return true 获取成功
+ * @return false 获取失败
+ *
+ * @note 需要先调用esp_at_sntp_init()初始化SNTP服务
+ * @note 需要WiFi连接已建立
  */
 bool esp_at_sntp_get_time(esp_date_time_t *date);
 
 /*============================================================================*/
-/*                             HTTP�ͻ��˺���                                 */
+/*                             HTTP客户端函数                                 */
 /*============================================================================*/
 
 /**
- * @brief ����HTTP GET����
- * 
- * ��ָ��URL����HTTP GET���󲢻�ȡ��Ӧ����
- * 
- * @param url ���������URL��ַ
- * @return const char* ��Ӧ����ָ�룬ʧ�ܷ���NULL
- * 
- * @note URL���Ȳ��ܳ���512�ֽ�
- * @note ����ʱʱ��Ϊ15��
- * @note ���ص�ָ��ָ���ڲ����������´�����Ḳ������
+ * @brief 发送HTTP GET请求
+ *
+ * 向指定URL发送HTTP GET请求并获取响应内容
+ *
+ * @param url 请求的URL地址
+ * @return const char* 响应内容指针，失败返回NULL
+ *
+ * @note URL长度不能超过512字节
+ * @note 请求超时时间为15秒
+ * @note 返回的指针指向内部缓冲区，下次请求会覆盖内容
  */
 const char *esp_at_http_get(const char *url);
 

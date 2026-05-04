@@ -1,23 +1,23 @@
 /**
  * @file bsp_espat.c
- * @brief ESP8266/ESP32 ATָ������ģ��
- * 
- * ���ļ�ʵ����ͨ��UART��ESP8266/ESP32ģ��ͨ�ŵ�ATָ��������������
- * - ATָ�������Ӧ����
- * - WiFi���ӹ���
- * - SNTPʱ��ͬ��
- * - HTTP GET����
- * 
- * ͨ��Э�飺
- * - �����ʣ�115200 bps
- * - ����λ��8λ
- * - ֹͣλ��1λ
- * - У��λ����
- * 
- * ATָ����Ӧ��ʽ��
- * - �ɹ���������� + "\r\n" + "OK" + "\r\n"
- * - ʧ�ܣ�������� + "\r\n" + "ERROR" + "\r\n"
- * 
+ * @brief ESP8266/ESP32 AT指令驱动模块
+ *
+ * 本文件实现了通过UART与ESP8266/ESP32模块通信的AT指令驱动，包括：
+ * - AT指令发送与响应解析
+ * - WiFi连接管理
+ * - SNTP时间同步
+ * - HTTP GET请求
+ *
+ * 通信协议：
+ * - 波特率：115200 bps
+ * - 数据位：8位
+ * - 停止位：1位
+ * - 校验位：无
+ *
+ * AT指令响应格式：
+ * - 成功：<响应内容> + "\r\n" + "OK" + "\r\n"
+ * - 失败：<响应内容> + "\r\n" + "ERROR" + "\r\n"
+ *
  * @author Smart Weather Clock Team
  * @version 1.0.0
  */
@@ -30,116 +30,116 @@
 #include "bsp_espat.h"
 
 /*============================================================================*/
-/*                             �궨��                                         */
+/*                             宏定义                                         */
 /*============================================================================*/
 
 /**
- * @brief ��������Ԫ�ظ���
- * @param arr ������
- * @return ����Ԫ�ظ���
+ * @brief 计算数组元素个数
+ * @param arr 数组名
+ * @return 数组元素个数
  */
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /*============================================================================*/
-/*                             �ⲿ��������                                   */
+/*                             外部变量声明                                   */
 /*============================================================================*/
 
-extern UART_HandleTypeDef huart2;    /**< UART2�����������ESPģ��ͨ�� */
-extern void esp_lock(void);          /**< ��ȡESPģ�黥���� */
-extern void esp_unlock(void);        /**< �ͷ�ESPģ�黥���� */
+extern UART_HandleTypeDef huart2;    /**< UART2句柄，用于ESP模块通信 */
+extern void esp_lock(void);          /**< 获取ESP模块互斥锁 */
+extern void esp_unlock(void);        /**< 释放ESP模块互斥锁 */
 
 /*============================================================================*/
-/*                             ˽�к궨��                                     */
+/*                             私有宏定义                                     */
 /*============================================================================*/
 
-#define ESP_UART_HANDLE (&huart2)    /**< ESPģ��ʹ�õ�UART���ָ�� */
+#define ESP_UART_HANDLE (&huart2)    /**< ESP模块使用的UART句柄指针 */
 
 /*============================================================================*/
-/*                             ˽�����Ͷ���                                   */
+/*                             私有类型定义                                   */
 /*============================================================================*/
 
 /**
- * @brief ATָ����Ӧ����ö��
+ * @brief AT指令响应类型枚举
  */
 typedef enum
 {
-    AT_ACK_NONE,     /**< ����Ӧ/��ʱ */
-    AT_ACK_OK,       /**< ��ӦOK */
-    AT_ACK_ERROR,    /**< ��ӦERROR */
-    AT_ACK_BUSY,     /**< ģ��æ */
-    AT_ACK_READY,    /**< ģ����� */
+    AT_ACK_NONE,     /**< 无响应/超时 */
+    AT_ACK_OK,       /**< 响应OK */
+    AT_ACK_ERROR,    /**< 响应ERROR */
+    AT_ACK_BUSY,     /**< 模块忙 */
+    AT_ACK_READY,    /**< 模块就绪 */
 } at_ack_t;
 
 /**
- * @brief AT��Ӧƥ��ṹ��
- * ���ڽ���Ӧ�ַ���ӳ�䵽��Ӧ����
+ * @brief AT响应匹配结构体
+ * 用于将响应字符串映射到响应类型
  */
 typedef struct
 {
-    at_ack_t ack;         /**< ��Ӧ���� */
-    const char *string;   /**< ��Ӧ�ַ��� */
+    at_ack_t ack;         /**< 响应类型 */
+    const char *string;   /**< 响应字符串 */
 } at_ack_match_t;
 
 /*============================================================================*/
-/*                             ˽�б���                                       */
+/*                             私有变量                                       */
 /*============================================================================*/
 
 /**
- * @brief AT��Ӧƥ���
- * �����˸���ATָ����Ӧ�ַ�������Ӧ���͵Ķ�Ӧ��ϵ
+ * @brief AT响应匹配表
+ * 定义了各种AT指令响应字符串与响应类型的对应关系
  */
-static const at_ack_match_t at_ack_matches[] = 
+static const at_ack_match_t at_ack_matches[] =
 {
-    {AT_ACK_OK, "OK\r\n"},         /**< �ɹ���Ӧ */
-    {AT_ACK_ERROR, "ERROR\r\n"},   /**< ������Ӧ */
-    {AT_ACK_BUSY, "busy p..."},    /**< æµ��Ӧ */
-    {AT_ACK_READY, "ready\r\n"},   /**< ������Ӧ */
+    {AT_ACK_OK, "OK\r\n"},         /**< 成功响应 */
+    {AT_ACK_ERROR, "ERROR\r\n"},   /**< 错误响应 */
+    {AT_ACK_BUSY, "busy p..."},    /**< 忙碌响应 */
+    {AT_ACK_READY, "ready\r\n"},   /**< 就绪响应 */
 };
 
-static char rxbuf[2048];           /**< UART���ջ����� */
+static char rxbuf[2048];           /**< UART接收缓冲区 */
 
 /*============================================================================*/
-/*                             ˽�к�������                                   */
+/*                             私有函数声明                                   */
 /*============================================================================*/
 
 static void esp_at_usart_write(const char *data);
 
 /*============================================================================*/
-/*                             UARTͨ�ź���                                   */
+/*                             UART通信函数                                   */
 /*============================================================================*/
 
 /**
- * @brief �ȴ�������UART��Ӧ����
- * 
- * �˺���������ѯ��ʽ����UART���ݣ������յ�������Ӧ�������Ӧ���͡�
- * ��Ӧ�Ի��з�(\n)��βʱ����ƥ���顣
- * 
- * @param timeout ��ʱʱ�䣨���룩
- * @return at_ack_t ��Ӧ����ö��ֵ
- * 
- * @note �˺�����������ջ��������ٿ�ʼ����
- * @note ������ջ���������δ�յ�������Ӧ������AT_ACK_NONE
+ * @brief 等待并接收UART响应数据
+ *
+ * 此函数以轮询方式接收UART数据，直到收到完整响应或超时。
+ * 响应以换行符(\n)结尾时，开始匹配响应类型。
+ *
+ * @param timeout 超时时间（毫秒）
+ * @return at_ack_t 响应类型枚举值
+ *
+ * @note 此函数会清空接收缓冲区后再开始接收
+ * @note 如果缓冲区满或未收到完整响应，返回AT_ACK_NONE
  */
 static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
 {
     uint32_t rxlen = 0;
     uint32_t start = HAL_GetTick();
-    
+
     memset(rxbuf, 0, sizeof(rxbuf));
-    
+
     while (rxlen < sizeof(rxbuf) - 1)
     {
         if(__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_ORE))
         {
             __HAL_UART_CLEAR_OREFLAG(ESP_UART_HANDLE);
-            (void)ESP_UART_HANDLE->Instance->DR; 
+            (void)ESP_UART_HANDLE->Instance->DR;
         }
 
         if (__HAL_UART_GET_FLAG(ESP_UART_HANDLE, UART_FLAG_RXNE) == SET)
         {
             uint8_t data = (uint8_t)(ESP_UART_HANDLE->Instance->DR & 0xFF);
             rxbuf[rxlen++] = data;
-            
+
             if (rxbuf[rxlen - 1] == '\n')
             {
                 for (uint32_t i = 0; i < ARRAY_SIZE(at_ack_matches); i++)
@@ -159,17 +159,17 @@ static at_ack_t esp_at_usart_wait_receive(uint32_t timeout)
             }
         }
     }
-    
+
     return AT_ACK_NONE;
 }
 
 /**
- * @brief ͨ��UART����ATָ��
- * 
- * ���͸�ʽ��ָ������ + "\r\n"
- * ATָ������Իس����н�β���ܱ�ESPģ��ʶ��
- * 
- * @param data Ҫ���͵�ָ���ַ���������\r\n��
+ * @brief 通过UART发送AT指令
+ *
+ * 发送格式化指令字符串 + "\r\n"
+ * AT指令必须以回车换行结尾才能被ESP模块识别
+ *
+ * @param data 要发送的指令字符串（不含\r\n）
  */
 static void esp_at_usart_write(const char *data)
 {
@@ -177,23 +177,23 @@ static void esp_at_usart_write(const char *data)
     {
         HAL_UART_Transmit(ESP_UART_HANDLE, (uint8_t*)data, strlen(data), 1000);
     }
-    
+
     uint8_t newline[] = {'\r', '\n'};
     HAL_UART_Transmit(ESP_UART_HANDLE, newline, 2, 100);
 }
 
 /*============================================================================*/
-/*                             ATָ���������                                 */
+/*                             AT指令基础接口                                 */
 /*============================================================================*/
 
 /**
- * @brief �ȴ�ESPģ�����
- * 
- * �ȴ�ESPģ���ϵ���ɺ���"ready"��Ӧ
- * 
- * @param timeout ��ʱʱ�䣨���룩
- * @return true ģ�����
- * @return false ��ʱδ�յ�������Ӧ
+ * @brief 等待ESP模块就绪
+ *
+ * 等待ESP模块上电完成后发送的"ready"响应
+ *
+ * @param timeout 超时时间（毫秒）
+ * @return true 模块就绪
+ * @return false 超时未收到就绪响应
  */
 bool esp_at_wait_ready(uint32_t timeout)
 {
@@ -201,14 +201,14 @@ bool esp_at_wait_ready(uint32_t timeout)
 }
 
 /**
- * @brief ����ATָ��ȴ���Ӧ������������
- * 
- * @param command ATָ���ַ���������\r\n��
- * @param timeout ��ʱʱ�䣨���룩
- * @return true ָ��ִ�гɹ����յ�OK��
- * @return false ָ��ִ��ʧ�ܻ�ʱ
- * 
- * @note �˺��������̰߳�ȫ�ģ������񻷾�����ʹ��esp_at_write_command_locked
+ * @brief 发送AT指令并等待响应（非线程安全版本）
+ *
+ * @param command AT指令字符串（不含\r\n）
+ * @param timeout 超时时间（毫秒）
+ * @return true 指令执行成功（收到OK）
+ * @return false 指令执行失败或超时
+ *
+ * @note 此函数非线程安全，多任务环境请使用esp_at_write_command_locked
  */
 bool esp_at_write_command(const char *command, uint32_t timeout)
 {
@@ -218,14 +218,14 @@ bool esp_at_write_command(const char *command, uint32_t timeout)
 }
 
 /**
- * @brief ����ATָ��ȴ���Ӧ����������������
- * 
- * �ڶ����񻷾��£�ʹ�ô˺������Է�ֹ�������ͬʱ����ESPģ�鵼�µĳ�ͻ
- * 
- * @param command ATָ���ַ���������\r\n��
- * @param timeout ��ʱʱ�䣨���룩
- * @return true ָ��ִ�гɹ�
- * @return false ָ��ִ��ʧ�ܻ�ʱ
+ * @brief 发送AT指令并等待响应（线程安全版本）
+ *
+ * 在多任务环境下，使用此函数可以防止多个任务同时访问ESP模块导致的冲突
+ *
+ * @param command AT指令字符串（不含\r\n）
+ * @param timeout 超时时间（毫秒）
+ * @return true 指令执行成功
+ * @return false 指令执行失败或超时
  */
 bool esp_at_write_command_locked(const char *command, uint32_t timeout)
 {
@@ -236,11 +236,11 @@ bool esp_at_write_command_locked(const char *command, uint32_t timeout)
 }
 
 /**
- * @brief ��ȡ���һ��ATָ�����Ӧ����
- * 
- * @return const char* ��Ӧ�ַ���ָ�루ָ���ڲ���������
- * 
- * @note ���ص�ָ��ָ���ڲ����������´ν��ջḲ������
+ * @brief 获取上一条AT指令的响应内容
+ *
+ * @return const char* 响应字符串指针（指向内部缓冲区）
+ *
+ * @note 返回的指针指向内部缓冲区，下次接收会覆盖内容
  */
 const char *esp_at_get_response(void)
 {
@@ -248,25 +248,25 @@ const char *esp_at_get_response(void)
 }
 
 /*============================================================================*/
-/*                             ESPģ���ʼ������                              */
+/*                             ESP模块初始化相关                              */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��ESP ATģ��
- * 
- * ��ʼ�����̣�
- * 1. ���UART�����־
- * 2. �ȴ�ģ���ϵ��ȶ���5�룩
- * 3. �Զ���Ⲩ���ʣ���ǰ�̶�115200��
- * 4. ����ATָ�����ͨ��
- * 5. ��λģ��
- * 6. �ȴ�ģ���������
- * 7. �رջ��ԣ�ATE0��
- * 
- * @return true ��ʼ���ɹ�
- * @return false ��ʼ��ʧ��
- * 
- * @note ��ʼ������Լ��15��
+ * @brief 初始化ESP AT模块
+ *
+ * 初始化流程：
+ * 1. 清除UART错误标志
+ * 2. 等待模块上电稳定（5秒）
+ * 3. 自动探测波特率（当前固定115200）
+ * 4. 发送AT指令测试通信
+ * 5. 复位模块
+ * 6. 等待模块重新就绪
+ * 7. 关闭回显（ATE0）
+ *
+ * @return true 初始化成功
+ * @return false 初始化失败
+ *
+ * @note 初始化过程约需15秒
  */
 bool esp_at_init(void)
 {
@@ -290,7 +290,7 @@ bool esp_at_init(void)
             printf("[AT] uart init failed at %lu\n", baud_rates[i]);
             continue;
         }
-        
+
         memset(rxbuf, 0, sizeof(rxbuf));
         start = HAL_GetTick();
         while ((HAL_GetTick() - start) < 1000)
@@ -300,7 +300,7 @@ bool esp_at_init(void)
                 (void)ESP_UART_HANDLE->Instance->DR;
             }
         }
-        
+
         for (uint8_t retry = 0; retry < 3; retry++)
         {
             esp_at_usart_write("AT");
@@ -329,13 +329,13 @@ bool esp_at_init(void)
 
         printf("[AT] no valid response at %lu\n", baud_rates[i]);
     }
-    
+
     return false;
-    
+
 baud_found:
     esp_at_usart_write("AT+RST");
     HAL_Delay(5000);
-    
+
     memset(rxbuf, 0, sizeof(rxbuf));
     start = HAL_GetTick();
     while ((HAL_GetTick() - start) < 3000)
@@ -345,7 +345,7 @@ baud_found:
             (void)ESP_UART_HANDLE->Instance->DR;
         }
     }
-    
+
     for (int retry = 0; retry < 10; retry++)
     {
         if (esp_at_write_command("AT", 3000))
@@ -355,26 +355,26 @@ baud_found:
         HAL_Delay(2000);
     }
     return false;
-    
+
 at_ok:
     esp_at_write_command("ATE0", 500);
-    
+
     return true;
 }
 
 /*============================================================================*/
-/*                             WiFi���ܺ���                                   */
+/*                             WiFi功能函数                                   */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��WiFiЭ��ջ
- * 
- * ����WiFi����ģʽΪStationģʽ���ͻ���ģʽ��
- * 
- * @return true ���óɹ�
- * @return false ����ʧ��
- * 
- * @note AT+CWMODE=1 ��ʾStationģʽ
+ * @brief 初始化WiFi协议栈
+ *
+ * 设置WiFi工作模式为Station模式（客户端模式）
+ *
+ * @return true 设置成功
+ * @return false 设置失败
+ *
+ * @note AT+CWMODE=1 表示Station模式
  */
 bool esp_at_wifi_init(void)
 {
@@ -382,23 +382,23 @@ bool esp_at_wifi_init(void)
 }
 
 /**
- * @brief ���ӵ�WiFi�ȵ�
- * 
- * @param ssid WiFi��������
- * @param pwd WiFi����
- * @param mac Ŀ��AP��MAC��ַ����ѡ������ָ�������ض�AP��
- * @return true ���ӳɹ�
- * @return false ����ʧ��
- * 
- * @note ���ӳ�ʱʱ��Ϊ20��
- * @note ���ssid��pwdΪNULL��ֱ�ӷ���ʧ��
+ * @brief 连接到WiFi热点
+ *
+ * @param ssid WiFi网络名称
+ * @param pwd WiFi密码
+ * @param mac 目标AP的MAC地址（可选，不指定则连接任意AP）
+ * @return true 连接成功
+ * @return false 连接失败
+ *
+ * @note 连接超时时间为20秒
+ * @note 若ssid或pwd为NULL，直接返回失败
  */
 bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
 {
     if (ssid == NULL || pwd == NULL)
         return false;
 
-    /* Some firmwares return non-OK when already connected, so pre-check first. */
+    /* 预检查：如果已连接到目标AP，直接返回成功 */
     esp_wifi_info_t current = {0};
     if (esp_at_get_wifi_info(&current) && current.connected)
     {
@@ -407,27 +407,27 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
             return true;
         }
     }
-    
+
     char cmd[128];
     int len = snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"", ssid, pwd);
-    
+
     if (len < 0 || len >= sizeof(cmd)) {
-        return false; 
+        return false;
     }
-    
+
     if (mac) {
         int remain = sizeof(cmd) - len;
         if (remain > 0) {
             snprintf(cmd + len, remain, ",\"%s\"", mac);
         }
     }
-    
+
     if (esp_at_write_command(cmd, 30000))
     {
         return true;
     }
 
-    /* Fallback: connection may still be up even if CWJAP did not return OK. */
+    /* 回退检查：CWJAP可能未返回OK但连接实际已建立 */
     memset(&current, 0, sizeof(current));
     if (esp_at_get_wifi_info(&current) && current.connected)
     {
@@ -441,36 +441,36 @@ bool esp_at_connect_wifi(const char *ssid, const char *pwd, const char *mac)
 }
 
 /**
- * @brief ����WiFi������Ϣ��Ӧ
- * 
- * ����AT+CWJAP?ָ�����Ӧ����ʽ���£�
+ * @brief 解析WiFi连接信息响应
+ *
+ * 解析AT+CWJAP?指令的响应，格式如下：
  * +CWJAP:"SSID","BSSID",Channel,RSSI
- * 
- * @param response ��Ӧ�ַ���
- * @param info �����WiFi��Ϣ�ṹ��
- * @return true �����ɹ�
- * @return false ����ʧ��
+ *
+ * @param response 响应字符串
+ * @param info 输出WiFi信息结构体
+ * @return true 解析成功
+ * @return false 解析失败
  */
 static bool parse_cwjap_response(const char *response, esp_wifi_info_t *info)
 {
     response = strstr(response, "+CWJAP:");
     if (response == NULL) return false;
-    
-    if (sscanf(response, "+CWJAP:\"%63[^\"]\",\"%17[^\"]\",%d,%d", 
+
+    if (sscanf(response, "+CWJAP:\"%63[^\"]\",\"%17[^\"]\",%d,%d",
                info->ssid, info->bssid, &info->channel, &info->rssi) != 4)
         return false;
-    
+
     return true;
 }
 
 /**
- * @brief ��ȡ��ǰWiFi������Ϣ
- * 
- * @param info �����WiFi��Ϣ�ṹ��ָ��
- * @return true ��ȡ�ɹ�
- * @return false δ���ӻ��ȡʧ��
- * 
- * @note �˺������̰߳�ȫ�ģ��ڲ�ʹ���˻�����
+ * @brief 获取当前WiFi连接信息
+ *
+ * @param info 输出WiFi信息结构体指针
+ * @return true 获取成功
+ * @return false 未连接或获取失败
+ *
+ * @note 此函数是线程安全的，内部使用了互斥锁
  */
 bool esp_at_get_wifi_info(esp_wifi_info_t *info)
 {
@@ -480,25 +480,25 @@ bool esp_at_get_wifi_info(esp_wifi_info_t *info)
         esp_unlock();
         return false;
     }
-    
+
     const char *resp = esp_at_get_response();
-    
+
     if (parse_cwjap_response(resp, info))
     {
         info->connected = true;
         esp_unlock();
         return true;
     }
-    
+
     esp_unlock();
     return false;
 }
 
 /**
- * @brief ���WiFi�Ƿ�������
- * 
- * @return true ������
- * @return false δ����
+ * @brief 检查WiFi是否已连接
+ *
+ * @return true 已连接
+ * @return false 未连接
  */
 bool wifi_is_connected(void)
 {
@@ -511,21 +511,20 @@ bool wifi_is_connected(void)
 }
 
 /*============================================================================*/
-/*                             SNTPʱ��ͬ������                               */
+/*                             SNTP时间同步接口                               */
 /*============================================================================*/
 
 /**
- * @brief ��ʼ��SNTPʱ��ͬ������
- * 
- * ����SNTP��������
- * - cn.pool.ntp.org���й�NTP�أ�
- * - ntp.aliyun.com��������NTP��
- * - ntp.tencent.com����Ѷ��NTP��
- * 
- * ʱ������Ϊ������������ʱ�䣬UTC+8��
- * 
- * @return true ���óɹ�
- * @return false ����ʧ��
+ * @brief 初始化SNTP时间同步服务
+ *
+ * 配置SNTP服务器地址：
+ * - cn.pool.ntp.org（中国NTP池）
+ * - ntp.aliyun.com（阿里云NTP服务器）
+ * - ntp.tencent.com（腾讯NTP服务器）
+ *
+ * 时区设置为中国标准时间（UTC+8）
+ *
+ * @return true 始终返回true（AT指令发送由底层保证）
  */
 bool esp_at_sntp_init(void)
 {
@@ -534,14 +533,14 @@ bool esp_at_sntp_init(void)
 }
 
 /**
- * @brief ���·��ַ���ת��Ϊ����
- * 
- * @param month_str �·��ַ�������"Jan", "Feb"�ȣ�
- * @return uint8_t �·����֣�1-12������Ч���뷵��0
+ * @brief 月份字符串转数字
+ *
+ * @param month_str 月份字符串（如"Jan", "Feb"等）
+ * @return uint8_t 月份数字（1-12），无效输入返回0
  */
 static uint8_t month_str_to_num(const char *month_str)
 {
-    const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+    const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     for (uint8_t i = 0; i < 12; i++) {
         if (strncmp(month_str, months[i], 3) == 0) return i + 1;
@@ -550,10 +549,10 @@ static uint8_t month_str_to_num(const char *month_str)
 }
 
 /**
- * @brief �������ַ���ת��Ϊ����
- * 
- * @param weekday_str �����ַ�������"Mon", "Tue"�ȣ�
- * @return uint8_t �������֣�1-7��1=��һ������Ч���뷵��0
+ * @brief 星期字符串转数字
+ *
+ * @param weekday_str 星期字符串（如"Mon", "Tue"等）
+ * @return uint8_t 星期数字（1-7，1=周一），无效输入返回0
  */
 static uint8_t weekday_str_to_num(const char *weekday_str)
 {
@@ -565,77 +564,77 @@ static uint8_t weekday_str_to_num(const char *weekday_str)
 }
 
 /**
- * @brief ����SNTPʱ����Ӧ
- * 
- * ����AT+CIPSNTPTIME?ָ�����Ӧ����ʽ���£�
+ * @brief 解析SNTP时间响应
+ *
+ * 解析AT+CIPSNTPTIME?指令的响应，格式如下：
  * +CIPSNTPTIME:Thu Jan 01 08:00:00 1970
- * 
- * @param response ��Ӧ�ַ���
- * @param date ���������ʱ��ṹ��
- * @return true �����ɹ�
- * @return false ����ʧ��
+ *
+ * @param response 响应字符串
+ * @param date 输出日期时间结构体
+ * @return true 解析成功
+ * @return false 解析失败
  */
 static bool parse_cipsntptime_response(const char *response, esp_date_time_t *date)
 {
     char weekday_str[8] = {0};
     char month_str[8] = {0};
-    
+
     response = strstr(response, "+CIPSNTPTIME:");
     if (!response) return false;
 
     unsigned int temp_day, temp_hour, temp_minute, temp_second, temp_year;
-    int parsed = sscanf(response, "+CIPSNTPTIME:%3s %3s %u %u:%u:%u %u", 
-               weekday_str, month_str, 
+    int parsed = sscanf(response, "+CIPSNTPTIME:%3s %3s %u %u:%u:%u %u",
+               weekday_str, month_str,
                &temp_day, &temp_hour, &temp_minute, &temp_second, &temp_year);
-    
+
     date->day = (uint8_t)temp_day;
     date->hour = (uint8_t)temp_hour;
     date->minute = (uint8_t)temp_minute;
     date->second = (uint8_t)temp_second;
     date->year = (uint16_t)temp_year;
-    
+
     if (parsed != 7)
         return false;
-    
+
     date->weekday = weekday_str_to_num(weekday_str);
     date->month = month_str_to_num(month_str);
     return true;
 }
 
 /**
- * @brief ��SNTP��������ȡ��ǰʱ��
- * 
- * @param date ���������ʱ��ṹ��ָ��
- * @return true ��ȡ�ɹ�
- * @return false ��ȡʧ��
- * 
- * @note ��Ҫ�ȵ���esp_at_sntp_init()��ʼ��SNTP����
- * @note ��ҪWiFi������
+ * @brief 从SNTP服务器获取当前时间
+ *
+ * @param date 输出日期时间结构体指针
+ * @return true 获取成功
+ * @return false 获取失败
+ *
+ * @note 需要先调用esp_at_sntp_init()初始化SNTP服务
+ * @note 需要WiFi连接已建立
  */
 bool esp_at_sntp_get_time(esp_date_time_t *date)
 {
     if (!esp_at_write_command("AT+CIPSNTPTIME?", 2000))
         return false;
-    
+
     if (!parse_cipsntptime_response(esp_at_get_response(), date))
         return false;
-    
+
     return true;
 }
 
 /*============================================================================*/
-/*                             HTTP�ͻ��˺���                                 */
+/*                             HTTP客户端函数                                 */
 /*============================================================================*/
 
 /**
- * @brief ����HTTP GET����
- * 
- * @param url �����URL��ַ
- * @return const char* ��Ӧ����ָ�룬ʧ�ܷ���NULL
- * 
- * @note URL���Ȳ��ܳ���512�ֽ�
- * @note ����ʱʱ��Ϊ15��
- * @note ���ص�ָ��ָ���ڲ����������´�����Ḳ������
+ * @brief 发送HTTP GET请求
+ *
+ * @param url 请求的URL地址
+ * @return const char* 响应内容指针，失败返回NULL
+ *
+ * @note URL长度不能超过512字节
+ * @note 请求超时时间为15秒
+ * @note 返回的指针指向内部缓冲区，下次请求会覆盖内容
  */
 const char *esp_at_http_get(const char *url)
 {
@@ -648,13 +647,13 @@ const char *esp_at_http_get(const char *url)
     if (ret < 0 || ret >= sizeof(cmd)) {
         return NULL;
     }
-    
+
     bool ok = esp_at_write_command(cmd, 15000);
-    
+
     if (!ok)
     {
         return NULL;
     }
-    
+
     return esp_at_get_response();
 }

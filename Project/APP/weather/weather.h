@@ -1,45 +1,45 @@
 /**
  * @file weather.h
- * @brief ÌìÆøÊý¾Ý½âÎöÄ£¿éÍ·ÎÄ¼þ
- * 
- * ±¾Í·ÎÄ¼þ¶¨ÒåÁËÌìÆøÐÅÏ¢µÄÊý¾Ý½á¹¹ºÍ½âÎöº¯Êý½Ó¿Ú¡£
- * Ö§³ÖÐÄÖªÌìÆø(Seniverse)APIµÄJSONÏìÓ¦¸ñÊ½¡£
- * 
+ * @brief å¤©æ°”æ•°æ®è§£æžæ¨¡å—å¤´æ–‡ä»¶
+ *
+ * æœ¬å¤´æ–‡ä»¶å®šä¹‰äº†å¤©æ°”ä¿¡æ¯çš„æ•°æ®ç»“æž„å’Œè§£æžå‡½æ•°æŽ¥å£ã€‚
+ * æ”¯æŒå¿ƒçŸ¥å¤©æ°”(Seniverse)APIçš„JSONå“åº”æ ¼å¼ã€‚
+ *
  * @author Smart Weather Clock Team
  * @version 1.0.0
  */
 
-#ifndef __WEAHTER_H__
-#define __WEAHTER_H__
+#ifndef __WEATHER_H__
+#define __WEATHER_H__
 
 #include <stdbool.h>
 #include <stdint.h>
 
 /**
- * @brief ÌìÆøÐÅÏ¢½á¹¹Ìå
- * 
- * ´æ´¢´ÓÌìÆøAPI½âÎö³öµÄÊý¾Ý£¬°üÀ¨Î»ÖÃÐÅÏ¢ºÍµ±Ç°ÌìÆø×´¿ö¡£
+ * @brief å¤©æ°”ä¿¡æ¯ç»“æž„ä½“
+ *
+ * å­˜å‚¨ä»Žå¤©æ°”APIè¿”å›žçš„è§£æžåŽæ•°æ®ï¼ŒåŒ…æ‹¬ä½ç½®ä¿¡æ¯å’Œå½“å‰å¤©æ°”çŠ¶å†µ
  */
 typedef struct
 {
-	char city[32];          /**< ³ÇÊÐÃû³Æ£¬Èç"±±¾©" */
-	char loaction[128];     /**< ÍêÕûÎ»ÖÃÂ·¾¶£¬Èç"±±¾©,±±¾©,ÖÐ¹ú" */
-	char weather[16];       /**< ÌìÆøÃèÊö£¬Èç"Çç"¡¢"¶àÔÆ" */
-	int weather_code;       /**< ÌìÆø´úÂë£¬ÓÃÓÚÍ¼±êÓ³Éä */
-	int temperature;        /**< µ±Ç°ÎÂ¶È(ÉãÊÏ¶È) */
-	int humidity;           /**< Êª¶È(°Ù·Ö±È) */
-	int wind_speed;         /**< ·çËÙ(km/h) */
-	char wind_direction[8]; /**< ·çÏò£¬Èç"±±"¡¢"¶«±±" */
+    char city[32];          /**< åŸŽå¸‚åç§°ï¼Œå¦‚"è¡¡é˜³" */
+    char location[128];     /**< è¯¦ç»†ä½ç½®è·¯å¾„ï¼Œå¦‚"è¡¡é˜³,æ¹–å—,ä¸­å›½" */
+    char weather[16];       /**< å¤©æ°”æè¿°ï¼Œå¦‚"æ™´"ã€"å¤šäº‘" */
+    int weather_code;       /**< å¤©æ°”ä»£ç ï¼Œç”¨äºŽå›¾æ ‡æ˜ å°„ */
+    int temperature;        /**< å½“å‰æ¸©åº¦(æ‘„æ°åº¦) */
+    int humidity;           /**< æ¹¿åº¦(ç™¾åˆ†æ¯”) */
+    int wind_speed;         /**< é£Žé€Ÿ(km/h) */
+    char wind_direction[8]; /**< é£Žå‘ï¼Œå¦‚"åŒ—"ã€"ä¸œå—" */
 } weather_info_t;
 
 /**
- * @brief ½âÎöÐÄÖªÌìÆøAPIµÄJSONÏìÓ¦
- * 
- * @param response  JSONÏìÓ¦×Ö·û´®Ö¸Õë
- * @param info      Êä³öµÄÌìÆøÐÅÏ¢½á¹¹ÌåÖ¸Õë
- * @return true     ½âÎö³É¹¦
- * @return false    ½âÎöÊ§°Ü
+ * @brief è§£æžå¿ƒçŸ¥å¤©æ°”APIçš„JSONå“åº”
+ *
+ * @param response  JSONå“åº”å­—ç¬¦ä¸²æŒ‡é’ˆ
+ * @param info      è¾“å‡ºå¤©æ°”ä¿¡æ¯ç»“æž„ä½“æŒ‡é’ˆ
+ * @return true     è§£æžæˆåŠŸ
+ * @return false    è§£æžå¤±è´¥
  */
 bool parse_seniverse_response(const char *response, weather_info_t *info);
 
-#endif /* __WEAHTER_H__ */
+#endif /* __WEATHER_H__ */
